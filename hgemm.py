@@ -16,7 +16,7 @@ from flydsl._mlir import ir
 from flydsl.runtime.device import get_rocm_arch
 from flydsl.utils.smem_allocator import SmemAllocator, SmemPtr
 from flydsl.compiler.kernel_function import CompilationContext
-from flydsl._mlir.dialects import llvm, fly
+from flydsl._mlir.dialects import llvm, fly, memref
 from flydsl.compiler.protocol import fly_values
 
 from utils.tensor_shim import get_dtype_in_kernel, GTensor, STensor, _to_raw
@@ -154,6 +154,7 @@ def compile_hgemm_kernel(
 
     # LDS parameters:
     gpu_arch = get_rocm_arch()
+    DMA_BYTES = 4 if gpu_arch == "gfx942" else 16
     allocator = SmemAllocator(None, arch=gpu_arch, global_sym_name="smem")
     smem_a_offset = allocator._align(allocator.ptr, 16)
     allocator.ptr = smem_a_offset + STAGES * BLOCK_M * BLOCK_K * DTYPE_BYTES
@@ -247,6 +248,38 @@ def compile_hgemm_kernel(
                 col_in_bytes = k_local_idx * DTYPE_BYTES
                 col_in_bytes = swizzle_xor16(m_local_idx, col_in_bytes, k_blocks16)
                 as_.vec_store((fx.Index(lds_stage), m_local_idx, col_in_bytes // DTYPE_BYTES), vecs[i], LDG_VEC_SIZE)
+        
+        def ldg_sts_a_async(k_offset, lds_stage):
+            LDG_ASYNC_VEC_SIZE = DMA_BYTES // DTYPE_BYTES
+            LDG_A_X_THREADS_AS = BLOCK_K // LDG_ASYNC_VEC_SIZE
+            LDG_REG_A_COUNT_AS = BLOCK_MK_SIZE // LDG_ASYNC_VEC_SIZE // BLOCK_THREADS
+            for i in range_constexpr(LDG_REG_A_COUNT_AS):
+                global_tid = BLOCK_THREADS * i + tid
+                m_local_idx = global_tid // LDG_A_X_THREADS_AS
+                k_local_idx = global_tid % LDG_A_X_THREADS_AS * LDG_ASYNC_VEC_SIZE
+                col_in_bytes = k_local_idx * DTYPE_BYTES
+                col_in_bytes = swizzle_xor16(m_local_idx, col_in_bytes, k_blocks16)
+                # get offset
+                global_offset = A_.linear_offset((m_offset + m_local_idx, k_offset + col_in_bytes // DTYPE_BYTES)) * DTYPE_BYTES
+                global_offset = arith.index_cast(T.i32, global_offset)
+                lds_offset = as_.linear_offset((fx.Index(lds_stage), m_local_idx, k_local_idx)) * DTYPE_BYTES
+                # get lds ptr
+                lds_ptr_type = ir.Type.parse("!llvm.ptr<3>")
+                lds_addr = memref.extract_aligned_pointer_as_index(as_.memptr) + lds_offset
+                lds_addr_ = rocdl.readfirstlane(T.i64, arith.index_cast(T.i64, lds_addr))
+                lds_ptr = llvm.inttoptr(lds_ptr_type, lds_addr_)
+                # dma copy
+                rocdl.raw_ptr_buffer_load_lds(
+                    A_.rsrc,
+                    lds_ptr,
+                    arith.constant(DMA_BYTES, type=T.i32),
+                    global_offset,
+                    arith.constant(0, type=T.i32),
+                    arith.constant(0, type=T.i32),
+                    arith.constant(1, type=T.i32),
+                )
+                # vec = A_.vec_load((m_offset + m_local_idx, k_offset + col_in_bytes // DTYPE_BYTES), LDG_ASYNC_VEC_SIZE)
+                # as_.vec_store((fx.Index(lds_stage), m_local_idx, k_local_idx), vec, LDG_ASYNC_VEC_SIZE)
         
         def ldg_b(k_offset):
             vecs = []
@@ -422,11 +455,15 @@ def compile_hgemm_kernel(
                 next_stage = 1 - current_stage
                 c_frags = state[2 : 2 + C_FRAGS_LEN]
                 b_frags = state[2 + C_FRAGS_LEN :]
-                a_regs_next = ldg_a(k_offset + BLOCK_K)
+                if not ASYNC_COPY:
+                    a_regs_next = ldg_a(k_offset + BLOCK_K)
+                else:
+                    ldg_sts_a_async(k_offset + BLOCK_K, next_stage)
                 b_frags_next = ldg_matrix_b(k_offset + BLOCK_K)
                 a_frags = lds_matrix_a(current_stage)
                 block_mma_sync(a_frags, b_frags, c_frags)
-                sts_a(a_regs_next, next_stage)
+                if not ASYNC_COPY:
+                    sts_a(a_regs_next, next_stage)
                 hot_loop_scheduler()
                 gpu.barrier()
                 k_offset = k_offset + fx.Int32(BLOCK_K)

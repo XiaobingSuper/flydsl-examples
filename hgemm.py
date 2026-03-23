@@ -579,6 +579,12 @@ def get_kwargs(m, n, k):
         kwargs['WARP_N_STEPS'] = 2
         kwargs['PACK_N'] = 2
         kwargs['SPLIT_K'] = 4
+    if m == 32 and n == 384 and k == 7168:
+        kwargs['BLOCK_K'] = 128
+        kwargs['WARP_M_STEPS'] = 1
+        kwargs['WARP_N_STEPS'] = 1
+        kwargs['PACK_N'] = 2
+        kwargs['SPLIT_K'] = 1
     return kwargs
 
 

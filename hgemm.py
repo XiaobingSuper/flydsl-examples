@@ -23,6 +23,9 @@ from utils.tensor_shim import get_dtype_in_kernel, GTensor, STensor, _to_raw
 fm_fast = arith.FastMathFlags.fast
 
 
+SPLIT_K_COUNTER_MAX_LEN = 128
+
+
 @dataclass
 class Args:
     dtype: torch.dtype
@@ -139,6 +142,9 @@ def compile_hgemm_kernel(
     if B_TO_LDS:
         smem_b_offset = allocator._align(allocator.ptr, 16)
         allocator.ptr = smem_b_offset + STAGES * BLOCK_N * BLOCK_K * DTYPE_BYTES
+    if IS_SPLIT_K:
+        smem_ilb_offset = allocator._align(allocator.ptr, 16)
+        allocator.ptr = smem_ilb_offset + 16
 
     KERNEL_NAME = f"hgemm_{dtype}_{BLOCK_M}x{BLOCK_N}x{BLOCK_K}_S{STAGES}TN"
     if B_PRE_SHUFFLE:
@@ -154,6 +160,7 @@ def compile_hgemm_kernel(
         A: fx.Tensor,
         B: fx.Tensor,
         m: fx.Int32,
+        COUNTER: fx.Tensor,
         raster_factor: fx.Constexpr[int],
     ):
         dtype_ = get_dtype_in_kernel(dtype)
@@ -181,6 +188,8 @@ def compile_hgemm_kernel(
             # origin: n // WARP_ATOM_N, WARP_ATOM_N, k // WARP_ATOM_K, WARP_ATOM_K // LDG_VEC_SIZE, LDG_VEC_SIZE
             SHUFFLED_B_ = GTensor(B, dtype=dtype_, shape=(
                 n // WARP_ATOM_N, k // WARP_ATOM_K, WARP_ATOM_K // LDG_VEC_SIZE, WARP_ATOM_N, LDG_VEC_SIZE))
+        if IS_SPLIT_K:
+            COUNTER_ = GTensor(COUNTER, dtype=T.i32, shape=(-1,))
         
         tid = fx.Int32(fx.thread_idx.x)
         wid = tid // WARP_SIZE
@@ -202,6 +211,75 @@ def compile_hgemm_kernel(
         ldmatrix_b_k_vec_idx = w_tid // WMMA_N * WMMA_FRAG_VALUES * MFMA_PER_WARP_K
         C_FRAGS_LEN = WARP_M_STEPS * WARP_N_STEPS
         c_frags = [acc_init] * C_FRAGS_LEN
+
+        def split_k_barrier():
+            _ptr_type = ir.Type.parse("!llvm.ptr<1>")
+            _i64_type = T.i64
+            one_i32 = arith.constant(1, type=T.i32)
+            one_v = one_i32._value if hasattr(one_i32, "_value") else one_i32
+            counter_idx = fx.block_idx.x * fx.Int32(n // BLOCK_N) + fx.block_idx.y
+            smem_ilb_ptr = SmemPtr(base_ptr, smem_ilb_offset, T.i32, shape=(1,))
+            ilb_ = STensor(smem_ilb_ptr, T.i32, shape=(1,))
+            rocdl.s_waitcnt(0)
+            is_t0_cond = arith.cmpi(arith.CmpIPredicate.ult, fx.Index(tid), fx.Index(1))
+            is_t0_cond_if = scf.IfOp(is_t0_cond, results_=[], has_else=False)
+            with ir.InsertionPoint(is_t0_cond_if.then_block):
+                counter_base_ptr = fly.extract_aligned_pointer_as_index(_ptr_type, fly_values(COUNTER)[0])
+                counter_base_ptr = llvm.PtrToIntOp(_i64_type, counter_base_ptr).result
+                counter_byte_offset = arith.index_cast(T.i64, fx.Index(counter_idx) * fx.Index(4))
+                counter_ptr = llvm.AddOp(counter_base_ptr, counter_byte_offset, llvm.IntegerOverflowFlags(0)).result
+                counter_ptr = llvm.IntToPtrOp(_ptr_type, counter_ptr).result
+                counter_ptr_v = counter_ptr._value if hasattr(counter_ptr, "_value") else counter_ptr
+                prev_op = llvm.AtomicRMWOp(
+                    llvm.AtomicBinOp.add,
+                    counter_ptr_v,
+                    one_v,
+                    llvm.AtomicOrdering.monotonic,
+                    syncscope="agent",
+                    alignment=4,
+                )
+                prev = prev_op.result
+                ilb_[0] = prev
+                scf.YieldOp([])
+            gpu.barrier()
+            is_last_block_all = arith.cmpi(
+                arith.CmpIPredicate.eq, ilb_[0],
+                 arith.constant(SPLIT_K - 1, type=T.i32))
+            is_last_block_all_if = scf.IfOp(is_last_block_all, results_=[], has_else=True)
+            with ir.InsertionPoint(is_last_block_all_if.then_block):
+                is_t0_cond = arith.cmpi(arith.CmpIPredicate.ult, fx.Index(tid), fx.Index(1))
+                is_t0_cond_if = scf.IfOp(is_t0_cond, results_=[], has_else=False)
+                with ir.InsertionPoint(is_t0_cond_if.then_block):
+                    COUNTER_[counter_idx] = arith.constant(0, type=T.i32)
+                    rocdl.s_waitcnt(0)
+                    scf.YieldOp([])
+                scf.YieldOp([])
+            with ir.InsertionPoint(is_last_block_all_if.else_block):
+                init_cur = COUNTER_[counter_idx]
+                w = scf.WhileOp([T.i32], [init_cur])
+                before = ir.Block.create_at_start(w.before, [T.i32])
+                after = ir.Block.create_at_start(w.after, [T.i32])
+                with ir.InsertionPoint(before):
+                    cur = before.arguments[0]
+                    need_wait = arith.CmpIOp(arith.CmpIPredicate.ne, cur, arith.constant(0, type=T.i32)).result
+                    scf.ConditionOp(need_wait, [cur])
+                with ir.InsertionPoint(after):
+                    data = COUNTER_[counter_idx]
+                    scf.YieldOp([data])
+                scf.YieldOp([])
+            gpu.barrier()
+
+        def zero_c():
+            cond = arith.cmpi(arith.CmpIPredicate.eq, ks_idx, fx.Index(0))
+            zero_vec = vector.broadcast(T.vec(LDG_VEC_SIZE, dtype_), c_zero_d)
+            if cond:
+                for i in range_constexpr(LDG_REG_C_COUNT):
+                    global_tid = BLOCK_THREADS * i + tid
+                    m_local_idx = global_tid // LDG_C_X_THREADS
+                    n_local_idx = global_tid % LDG_C_X_THREADS * LDG_VEC_SIZE
+                    row_idx = m_offset + fx.Index(m_local_idx)
+                    if arith.cmpi(arith.CmpIPredicate.ult, row_idx, fx.Index(m)):
+                        C_.vec_store((row_idx, n_offset + n_local_idx), zero_vec, LDG_VEC_SIZE)
         
         def ldg_a(k_offset):
             vecs = []
@@ -336,6 +414,9 @@ def compile_hgemm_kernel(
                         acc_mid = mfma_fn(T.f32x4, [a_v0, b_v0, acc_in, 0, 0, 0])
                         c_frags[c_idx] = mfma_fn(T.f32x4, [a_v1, b_v1, acc_mid, 0, 0, 0])
         
+        if IS_SPLIT_K:
+            zero_c()
+        
         if B_TO_LDS:
             # SLOW PATH
             raise NotImplementedError("B_TO_LDS not supported yet")
@@ -460,7 +541,12 @@ def compile_hgemm_kernel(
                         lds_n_idx = fx.Index(warp_atom_n_idx + stmatrix_c_n_idx)
                         val = vector.extract(c_frags[ii * WARP_N_STEPS + jj], static_position=[kk], dynamic_position=[])
                         cs_[lds_m_idx, lds_n_idx] = val.truncf(dtype_)
-            gpu.barrier()
+            
+            if IS_SPLIT_K:
+                split_k_barrier()
+            else:
+                gpu.barrier()
+            
             if IS_SPLIT_K:
                 _ptr_type = ir.Type.parse("!llvm.ptr<1>")
                 _i64_type = T.i64
@@ -517,6 +603,7 @@ def compile_hgemm_kernel(
         A: fx.Tensor,
         B: fx.Tensor,
         m: fx.Int32,
+        COUNTER: fx.Tensor,
         stream: fx.Stream = fx.Stream(None),
     ):
         allocator.finalized = False
@@ -530,7 +617,7 @@ def compile_hgemm_kernel(
         bm = bm * raster_factor
         bn = (bn + raster_factor - 1) // raster_factor
         hgemm_kernel._func.__name__ = KERNEL_NAME
-        hgemm_kernel(C, A, B, m, raster_factor).launch(grid=(bm, bn, SPLIT_K), block=(BLOCK_THREADS, 1, 1), stream=stream)
+        hgemm_kernel(C, A, B, m, COUNTER, raster_factor).launch(grid=(bm, bn, SPLIT_K), block=(BLOCK_THREADS, 1, 1), stream=stream)
     
     return launch_hgemm_kernel
 
@@ -567,6 +654,7 @@ def get_default_kwargs(m, n, k):
         kwargs['TILE_K'] = 128
         kwargs['TILE_M'] = 32
         kwargs['TILE_N'] = 128
+        kwargs['SPLIT_K'] = 4
     if m <= 32 and n == 384 and k == 7168:
         kwargs['TILE_K'] = 128
         kwargs['TILE_M'] = 16
@@ -578,9 +666,11 @@ selections = {
     'TILE_K': [64, 128],
     'TILE_M': [16, 32, 48, 64, 96, 128],
     'TILE_N': [64, 128, 256],
+    'SPLIT_K': [1, 2, 4],
 }
 
 
+SPLIT_K_GLOBAL_SEMAPHORE = {}
 def hgemm_(
     a: torch.Tensor,
     b: torch.Tensor,
@@ -588,6 +678,12 @@ def hgemm_(
     shuffle_b: bool=True,
     hgemm_kwargs: dict={},
 ):
+    device = a.device
+    global SPLIT_K_COUNTER_MAX_LEN
+    global SPLIT_K_GLOBAL_SEMAPHORE
+    if SPLIT_K_GLOBAL_SEMAPHORE.get(device, None) is None:
+        SPLIT_K_GLOBAL_SEMAPHORE[device] = torch.zeros(
+            (SPLIT_K_COUNTER_MAX_LEN,), dtype=torch.int32, device=device)
     k = a.shape[-1]
     a = a.view(-1, k)
     m = a.shape[0]
@@ -605,9 +701,12 @@ def hgemm_(
         raise NotImplementedError()
     if kwargs['B_PRE_SHUFFLE'] and shuffle_b:
         b = hgemm_shuffle_b(b)
+    semaphore = SPLIT_K_GLOBAL_SEMAPHORE[device]
     if kwargs['SPLIT_K'] > 1:
-        c.zero_() # TODO: remove it
-    exe(c, a, b, m, stream=torch.cuda.current_stream())
+        bm = (m + kwargs['TILE_M'] - 1) // kwargs['TILE_M']
+        bn = n // kwargs['TILE_N']
+        assert bm * bn <= SPLIT_K_COUNTER_MAX_LEN
+    exe(c, a, b, m, semaphore, stream=torch.cuda.current_stream())
 
 
 def func(a, b, c):

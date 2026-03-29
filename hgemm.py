@@ -214,6 +214,7 @@ def compile_hgemm_kernel(
         c_frags = [acc_init] * C_FRAGS_LEN
 
         def zero_c():
+            # zero c
             cond_ks0 = arith.cmpi(arith.CmpIPredicate.eq, ks_idx, fx.Index(0))
             cond_ks0_if = scf.IfOp(cond_ks0, results_=[], has_else=False)
             with ir.InsertionPoint(cond_ks0_if.then_block):
@@ -228,7 +229,12 @@ def compile_hgemm_kernel(
                     with ir.InsertionPoint(cond_boundary_if.then_block):
                         C_.vec_store((row_idx, n_offset + n_local_idx), zero_vec, LDG_VEC_SIZE)
                         scf.YieldOp([])
-                # write flag
+                scf.YieldOp([])
+            rocdl.sched_barrier(0)
+            gpu.barrier()
+            # write flag
+            cond_ks0_if = scf.IfOp(cond_ks0, results_=[], has_else=False)
+            with ir.InsertionPoint(cond_ks0_if.then_block):
                 is_t0_cond = arith.cmpi(arith.CmpIPredicate.eq, fx.Index(tid), fx.Index(0))
                 is_t0_cond_if = scf.IfOp(is_t0_cond, results_=[], has_else=False)
                 with ir.InsertionPoint(is_t0_cond_if.then_block):
@@ -247,11 +253,23 @@ def compile_hgemm_kernel(
                     rocdl.s_waitcnt(0)
                     scf.YieldOp([])
                 scf.YieldOp([])
+            rocdl.sched_barrier(0)
+            gpu.barrier()
+            # zero signal
+            cond_ks0_if = scf.IfOp(cond_ks0, results_=[], has_else=False)
+            with ir.InsertionPoint(cond_ks0_if.then_block):
+                clean_cond = arith.cmpi(arith.CmpIPredicate.ult, fx.Index(tid), fx.Index(SPLIT_K_COUNTER_MAX_LEN))
+                clean_cond_if = scf.IfOp(clean_cond, results_=[], has_else=False)
+                with ir.InsertionPoint(clean_cond_if.then_block):
+                    clean_counter_idx = fx.Int32(((signal_state + 2) % 3) * SPLIT_K_COUNTER_MAX_LEN) + fx.Index(tid)
+                    COUNTER_[fx.Index(clean_counter_idx)] = arith.constant(0, type=T.i32)
+                    scf.YieldOp([])
+                scf.YieldOp([])
+            rocdl.sched_barrier(0)
+            gpu.barrier()
 
         def split_k_barrier():
-            is_t0_cond = arith.cmpi(arith.CmpIPredicate.eq, fx.Index(tid), fx.Index(0))
-            is_t0_cond_if = scf.IfOp(is_t0_cond, results_=[], has_else=False)
-            with ir.InsertionPoint(is_t0_cond_if.then_block):
+            if True:
                 init_cur = arith.constant(0, type=T.i32)
                 w = scf.WhileOp([T.i32], [init_cur])
                 before = ir.Block.create_at_start(w.before, [T.i32])
@@ -274,7 +292,6 @@ def compile_hgemm_kernel(
                     ).result
                     rocdl.s_waitcnt(0)
                     scf.YieldOp([data])
-                scf.YieldOp([])
             gpu.barrier()
         
         def ldg_a(k_offset):
@@ -598,18 +615,6 @@ def compile_hgemm_kernel(
                         vec = cs_.vec_load((m_local_idx, n_local_idx), LDG_VEC_SIZE)
                         C_.vec_store((m_global_idx, n_offset + n_local_idx), vec, LDG_VEC_SIZE)
                         scf.YieldOp([])
-
-        if IS_SPLIT_K:
-            cond_ks0 = arith.cmpi(arith.CmpIPredicate.eq, ks_idx, fx.Index(0))
-            cond_ks0_if = scf.IfOp(cond_ks0, results_=[], has_else=False)
-            with ir.InsertionPoint(cond_ks0_if.then_block):
-                is_t0_cond = arith.cmpi(arith.CmpIPredicate.eq, fx.Index(tid), fx.Index(0))
-                is_t0_cond_if = scf.IfOp(is_t0_cond, results_=[], has_else=False)
-                with ir.InsertionPoint(is_t0_cond_if.then_block):
-                    clean_counter_idx = fx.Int32(((signal_state + 2) % 3) * SPLIT_K_COUNTER_MAX_LEN) + fx.block_idx.x * fx.Int32(n // BLOCK_N) + fx.block_idx.y
-                    COUNTER_[fx.Index(clean_counter_idx)] = arith.constant(0, type=T.i32)
-                    scf.YieldOp([])
-                scf.YieldOp([])
         return
     
     @flyc.jit
@@ -674,6 +679,7 @@ def get_default_kwargs(m, n, k):
         kwargs['TILE_K'] = 128
         kwargs['TILE_M'] = 16
         kwargs['TILE_N'] = 128
+        kwargs['SPLIT_K'] = 8
     return kwargs
 
 
@@ -681,7 +687,7 @@ selections = {
     'TILE_K': [64, 128],
     'TILE_M': [16, 32, 48, 64, 96, 128],
     'TILE_N': [64, 128, 256],
-    'SPLIT_K': [1, 2, 4],
+    'SPLIT_K': [1, 2, 4, 8],
 }
 
 

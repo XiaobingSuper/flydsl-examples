@@ -4,8 +4,8 @@ This script supports two workflows:
 1. Benchmark a single GEMM shape against the `tgemm.mm` reference path.
 2. Tune a CSV of GEMM shapes and emit only the shapes where FlyDSL wins.
 
-The CSV tuning path currently assumes `bias=False`, `scaleAB=False`, and
-`bpreshuffle=False`.
+The CSV tuning path currently assumes `bias=False`, `scaleAB=False`, and the
+non-preshuffled-B wrapper path (`bpreshuffle=False`).
 """
 
 import argparse
@@ -23,6 +23,7 @@ from tqdm import tqdm
 from aiter.ops.flydsl.gemm_kernels import flydsl_kernel_name
 from aiter.test_common import checkAllclose, run_perftest
 from aiter.tuned_gemm import tgemm
+from flydsl.runtime.device import get_rocm_arch
 from gemm_kernal import flydsl_hgemm
 
 
@@ -40,14 +41,69 @@ CLI_DTYPE_MAP = {
 }
 
 
+FIXED_STAGE = 2
+FIXED_B_TO_LDS = False
+FIXED_C_TO_LDS = False
+DEFAULT_BLOCK_M_WARPS = 1
+DEFAULT_BLOCK_N_WARPS = 4
+DEFAULT_B_PRESHUFFLE = False
+GPU_ARCH = get_rocm_arch()
+KERNEL_ASYNC_COPY = GPU_ARCH != "gfx942"
+
 CONFIG_SELECTIONS = {
     "tile_k": [64, 128],
     "tile_m": [16, 32, 48, 64, 96, 128],
     "tile_n": [64, 128, 256],
-    "split_k": [1, 2, 4, 8],
-    "stages": [1, 2],
-    "async_copy": [False],
+    "split_k": [1, 2, 4, 8, 16],
 }
+
+TUNING_CONFIG_VARIANTS = (
+    {
+        "block_m_warps": DEFAULT_BLOCK_M_WARPS,
+        "block_n_warps": DEFAULT_BLOCK_N_WARPS,
+        "b_to_lds": FIXED_B_TO_LDS,
+    },
+    {
+        "block_m_warps": 2,
+        "block_n_warps": 2,
+        "b_to_lds": True,
+    },
+)
+
+
+def _kernel_uses_async_copy() -> bool:
+    return KERNEL_ASYNC_COPY
+
+
+def _as_bool(value) -> bool:
+    if isinstance(value, bool):
+        return value
+    return str(value).strip().lower() in {"1", "true", "yes", "y"}
+
+
+def _normalize_config(config=None, *, default_b_preshuffle=DEFAULT_B_PRESHUFFLE):
+    config = {} if config is None else dict(config)
+
+    requested_stage = int(config.get("stages", FIXED_STAGE))
+    if requested_stage not in (1, FIXED_STAGE):
+        raise ValueError(
+            f"Unsupported stages={requested_stage}; current `hgemm.py` only supports stage=2"
+        )
+
+    normalized = {
+        "tile_m": int(config.get("tile_m", 128)),
+        "tile_n": int(config.get("tile_n", 128)),
+        "tile_k": int(config.get("tile_k", 64)),
+        "split_k": int(config.get("split_k", 1)),
+        "stages": FIXED_STAGE,
+        "async_copy": _kernel_uses_async_copy(),
+        "block_m_warps": int(config.get("block_m_warps", DEFAULT_BLOCK_M_WARPS)),
+        "block_n_warps": int(config.get("block_n_warps", DEFAULT_BLOCK_N_WARPS)),
+        "b_to_lds": _as_bool(config.get("b_to_lds", FIXED_B_TO_LDS)),
+        "b_preshuffle": _as_bool(config.get("b_preshuffle", default_b_preshuffle)),
+        "c_to_lds": _as_bool(config.get("c_to_lds", FIXED_C_TO_LDS)),
+    }
+    return normalized
 
 CSV_COLUMNS = [
     "cu_num",
@@ -73,7 +129,18 @@ CSV_COLUMNS = [
 def _candidate_configs():
     keys = list(CONFIG_SELECTIONS.keys())
     values = [CONFIG_SELECTIONS[key] for key in keys]
-    return [dict(zip(keys, combo)) for combo in itertools.product(*values)]
+    candidate_configs = []
+    seen_configs = set()
+    for combo in itertools.product(*values):
+        base_config = dict(zip(keys, combo))
+        for variant in TUNING_CONFIG_VARIANTS:
+            config = _normalize_config({**base_config, **variant})
+            config_key = tuple(sorted(config.items()))
+            if config_key in seen_configs:
+                continue
+            seen_configs.add(config_key)
+            candidate_configs.append(config)
+    return candidate_configs
 
 
 CANDIDATE_CONFIGS = _candidate_configs()
@@ -118,19 +185,26 @@ def ref_func(a, b):
 
 
 def func(a, b, c, config=None):
-    config = {} if config is None else dict(config)
+    config = _normalize_config(
+        config,
+        default_b_preshuffle=getattr(b, "is_shuffled", False),
+    )
     return flydsl_hgemm(
         a,
         b,
         c,
-        tile_m=config.get("tile_m", 128),
-        tile_n=config.get("tile_n", 128),
-        tile_k=config.get("tile_k", 64),
-        split_k=config.get("split_k", 1),
-        stages=config.get("stages", 2),
-        async_copy=config.get("async_copy", False),
-        b_preshuffle=getattr(b, "is_shuffled", False),
-        auto_shuffle_b=False,
+        tile_m=config["tile_m"],
+        tile_n=config["tile_n"],
+        tile_k=config["tile_k"],
+        split_k=config["split_k"],
+        block_m_warps=config["block_m_warps"],
+        block_n_warps=config["block_n_warps"],
+        stages=config["stages"],
+        async_copy=config["async_copy"],
+        b_to_lds=config["b_to_lds"],
+        b_preshuffle=config["b_preshuffle"],
+        auto_shuffle_b=config["b_preshuffle"],
+        c_to_lds=config["c_to_lds"],
     )
 
 
@@ -170,6 +244,7 @@ def _create_tuning_context(args):
 
 
 def _config_to_kernel_name(config, dtype: str = "bf16", out_dtype: str = "bf16"):
+    config = _normalize_config(config)
     return flydsl_kernel_name(
         stage=config["stages"],
         dtype=dtype,
@@ -178,12 +253,12 @@ def _config_to_kernel_name(config, dtype: str = "bf16", out_dtype: str = "bf16")
         tile_n=config["tile_n"],
         tile_k=config["tile_k"],
         split_k=config["split_k"],
-        block_m_warp=1,
-        block_n_warp=4,
+        block_m_warp=config["block_m_warps"],
+        block_n_warp=config["block_n_warps"],
         async_copy=config["async_copy"],
-        b_to_lds=False,
-        b_preshuffle=False,
-        c_to_lds=False,
+        b_to_lds=config["b_to_lds"],
+        b_preshuffle=config["b_preshuffle"],
+        c_to_lds=config["c_to_lds"],
     )
 
 
@@ -217,9 +292,7 @@ def _parse_torch_dtype(dtype_str: str) -> torch.dtype:
 
 
 def _parse_bool(value):
-    if isinstance(value, bool):
-        return value
-    return str(value).strip().lower() in {"1", "true", "yes", "y"}
+    return _as_bool(value)
 
 
 def _calculate_perf(m, n, k, us, dtype, out_dtype):
@@ -285,6 +358,7 @@ def _benchmark_shape(args, config, warmup=20, niters=100):
 
 
 def _make_output_row(args, config, flydsl_us, err_ratio):
+    config = _normalize_config(config)
     kernel_name = _config_to_kernel_name(config)
     tflops, bw = _calculate_perf(args.m, args.n, args.k, flydsl_us, args.dtype, args.dtype)
     return {
@@ -296,7 +370,7 @@ def _make_output_row(args, config, flydsl_us, err_ratio):
         "dtype": _dtype_to_csv_string(args.dtype),
         "outdtype": _dtype_to_csv_string(args.dtype),
         "scaleAB": False,
-        "bpreshuffle": False,
+        "bpreshuffle": config["b_preshuffle"],
         "libtype": "flydsl",
         "solidx": _config_to_solidx(config),
         "splitK": config["split_k"],

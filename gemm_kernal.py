@@ -13,13 +13,36 @@ from hgemm import compile_hgemm_kernel, hgemm_shuffle_b
 
 __all__ = [
     "flydsl_hgemm",
+    "shuffle_weight",
 ]
+
+shuffle_weight = hgemm_shuffle_b
 
 SPLIT_K_COUNTER_MAX_LEN = 128
 SPLIT_K_SIGNAL_STATE_COUNT = 3
-SPLIT_K_GLOBAL_SEMAPHORE: dict[torch.device, torch.Tensor] = {}
-SPLIT_K_GLOBAL_SEMAPHORE_STATE: dict[torch.device, int] = {}
- 
+MAX_LDS_BYTES = 163840
+# Match `hgemm.py`: split-K counters and signal states are stream-local.
+SplitKStreamKey = tuple[int, int]
+SPLIT_K_GLOBAL_SEMAPHORE: dict[SplitKStreamKey, torch.Tensor] = {}
+SPLIT_K_GLOBAL_SEMAPHORE_STATE: dict[SplitKStreamKey, int] = {}
+
+
+def _stream_cache_key(stream: torch.cuda.Stream) -> SplitKStreamKey:
+    device_index = stream.device.index
+    if device_index is None:
+        raise ValueError(f"Unable to determine device index for stream {stream!r}")
+    return (device_index, int(stream.cuda_stream))
+
+
+def _normalize_launch_stream(
+    device: torch.device,
+    stream: Optional[torch.cuda.Stream],
+) -> torch.cuda.Stream:
+    launch_stream = torch.cuda.current_stream(device=device) if stream is None else stream
+    if launch_stream.device != device:
+        raise ValueError(f"`stream` must be on {device}, got {launch_stream.device}")
+    return launch_stream
+
 
 def _to_kernel_dtype(dtype: torch.dtype) -> str:
     if dtype == torch.float16:
@@ -27,6 +50,32 @@ def _to_kernel_dtype(dtype: torch.dtype) -> str:
     if dtype == torch.bfloat16:
         return "bf16"
     raise ValueError(f"Only fp16/bf16 are supported, got {dtype!r}")
+
+
+def _align_up(value: int, alignment: int) -> int:
+    return ((value + alignment - 1) // alignment) * alignment
+
+
+def _estimate_hgemm_lds_bytes(
+    *,
+    dtype: str,
+    tile_m: int,
+    tile_n: int,
+    tile_k: int,
+    stages: int,
+    b_to_lds: bool,
+) -> int:
+    if dtype not in {"f16", "bf16"}:
+        raise ValueError(f"`dtype` must be 'f16' or 'bf16', got {dtype!r}")
+
+    dtype_bytes = 2
+    a_lds_bytes = max(
+        stages * tile_m * tile_k * dtype_bytes,
+        tile_m * tile_n * dtype_bytes,
+    )
+    if not b_to_lds:
+        return a_lds_bytes
+    return _align_up(a_lds_bytes, 16) + stages * tile_n * tile_k * dtype_bytes
 
 
 def _get_flydsl_shuffle_layout(pack_n: int) -> tuple[int, int]:
@@ -80,6 +129,7 @@ def _validate_hgemm_tiling(
     n: int,
     k: int,
     *,
+    dtype: str,
     tile_m: int,
     tile_n: int,
     tile_k: int,
@@ -88,27 +138,36 @@ def _validate_hgemm_tiling(
     stages: int,
     block_m_warps: int,
     block_n_warps: int,
+    b_to_lds: bool,
 ) -> None:
     del m
 
+    if tile_m < 1 or tile_n < 1 or tile_k < 1:
+        raise ValueError(
+            f"Tile sizes must be positive, got tile_m={tile_m}, tile_n={tile_n}, tile_k={tile_k}"
+        )
+    if block_m_warps < 1 or block_n_warps < 1:
+        raise ValueError(
+            "Warp tiling must be positive, got "
+            f"block_m_warps={block_m_warps}, block_n_warps={block_n_warps}"
+        )
     if tile_k < 32:
         raise ValueError(
             f"Invalid tile_k={tile_k}; latest kernel requires tile_k >= 32"
         )
+    if tile_k % 32 != 0:
+        raise ValueError(
+            f"Invalid tile_k={tile_k}; latest kernel requires tile_k % 32 == 0"
+        )
     if split_k < 1:
         raise ValueError(f"Invalid split_k={split_k}; split_k must be >= 1")
-    if stages not in (1, 2):
+    if stages != 2:
         raise ValueError(
-            f"Invalid stages={stages}; latest kernel only supports stages in {{1, 2}}"
+            f"Invalid stages={stages}; current `hgemm.py` always compiles a 2-stage kernel"
         )
     if pack_n != 1:
         raise ValueError(
             "Latest `hgemm.py` kernel only supports `pack_n=1`; " f"got pack_n={pack_n}"
-        )
-    if block_m_warps * block_n_warps != 4:
-        raise ValueError(
-            "Latest `hgemm.py` kernel requires block_m_warps * block_n_warps == 4; "
-            f"got {block_m_warps} * {block_n_warps}"
         )
 
     warp_atom_m = 16
@@ -145,41 +204,77 @@ def _validate_hgemm_tiling(
 
     block_threads = block_m_warps * block_n_warps * 64
     ldg_vec_size = 8
-    ldg_reg_a_count = (tile_m * tile_k) // ldg_vec_size // block_threads
-    ldg_reg_b_count = (tile_n * tile_k) // ldg_vec_size // block_threads
-    ldg_reg_c_count = (tile_m * tile_n) // ldg_vec_size // block_threads
+    block_vecs = ldg_vec_size * block_threads
+    block_mk_size = tile_m * tile_k
+    block_nk_size = tile_n * tile_k
+    block_mn_size = tile_m * tile_n
+    if block_mk_size % block_vecs != 0:
+        raise ValueError(
+            "Invalid tile combination: tile_m * tile_k must be divisible by "
+            f"ldg_vec_size * block_threads = {block_vecs}; got {block_mk_size}"
+        )
+    if block_nk_size % block_vecs != 0:
+        raise ValueError(
+            "Invalid tile combination: tile_n * tile_k must be divisible by "
+            f"ldg_vec_size * block_threads = {block_vecs}; got {block_nk_size}"
+        )
+    if block_mn_size % block_vecs != 0:
+        raise ValueError(
+            "Invalid tile combination: tile_m * tile_n must be divisible by "
+            f"ldg_vec_size * block_threads = {block_vecs}; got {block_mn_size}"
+        )
+    ldg_reg_a_count = block_mk_size // block_vecs
+    ldg_reg_b_count = block_nk_size // block_vecs
+    ldg_reg_c_count = block_mn_size // block_vecs
     if ldg_reg_a_count < 1 or ldg_reg_b_count < 1:
         raise ValueError(
             "Invalid tile combination: requires at least one vectorized global load per thread "
             f"(got ldg_reg_a_count={ldg_reg_a_count}, ldg_reg_b_count={ldg_reg_b_count})"
         )
-    if split_k > 1 and ldg_reg_c_count < 1:
+    if ldg_reg_c_count < 1:
         raise ValueError(
-            "Invalid split-K tile combination: requires at least one vectorized C load/store per thread "
+            "Invalid tile combination: requires at least one vectorized C load/store per thread "
             f"(got ldg_reg_c_count={ldg_reg_c_count})"
         )
 
+    lds_bytes = _estimate_hgemm_lds_bytes(
+        dtype=dtype,
+        tile_m=tile_m,
+        tile_n=tile_n,
+        tile_k=tile_k,
+        stages=stages,
+        b_to_lds=b_to_lds,
+    )
+    if lds_bytes > MAX_LDS_BYTES:
+        raise ValueError(
+            "Invalid tile combination: estimated LDS usage "
+            f"{lds_bytes} exceeds the hardware limit {MAX_LDS_BYTES}"
+        )
 
-def _get_split_k_global_semaphore(device: torch.device) -> torch.Tensor:
-    semaphore = SPLIT_K_GLOBAL_SEMAPHORE.get(device)
+
+def _get_split_k_global_semaphore(stream: torch.cuda.Stream) -> torch.Tensor:
+    key = _stream_cache_key(stream)
+    semaphore = SPLIT_K_GLOBAL_SEMAPHORE.get(key)
     if semaphore is None:
         semaphore = torch.zeros(
             (SPLIT_K_SIGNAL_STATE_COUNT * SPLIT_K_COUNTER_MAX_LEN,),
             dtype=torch.int32,
-            device=device,
+            device=stream.device,
         )
-        SPLIT_K_GLOBAL_SEMAPHORE[device] = semaphore
-        SPLIT_K_GLOBAL_SEMAPHORE_STATE[device] = int(0)
+        SPLIT_K_GLOBAL_SEMAPHORE[key] = semaphore
+        SPLIT_K_GLOBAL_SEMAPHORE_STATE[key] = int(0)
     return semaphore
 
 
-def _get_split_k_signal_state(device: torch.device) -> int:
-    return SPLIT_K_GLOBAL_SEMAPHORE_STATE[device]
+def _get_split_k_signal_state(stream: torch.cuda.Stream) -> int:
+    _get_split_k_global_semaphore(stream)
+    return SPLIT_K_GLOBAL_SEMAPHORE_STATE[_stream_cache_key(stream)]
 
 
-def _advance_split_k_signal_state(device: torch.device) -> None:
-    SPLIT_K_GLOBAL_SEMAPHORE_STATE[device] = (
-        _get_split_k_signal_state(device) + 1
+def _advance_split_k_signal_state(stream: torch.cuda.Stream) -> None:
+    key = _stream_cache_key(stream)
+    SPLIT_K_GLOBAL_SEMAPHORE_STATE[key] = (
+        _get_split_k_signal_state(stream) + 1
     ) % SPLIT_K_SIGNAL_STATE_COUNT
 
 
@@ -216,7 +311,6 @@ def _compile_flydsl_hgemm(
     b_preshuffle: bool = True,
     split_k: int = 1,
     c_to_lds: bool = False,
-    signal_state: int = 0,
 ):
     """Compile and cache a FlyDSL HGEMM kernel launcher."""
 
@@ -226,11 +320,14 @@ def _compile_flydsl_hgemm(
         raise ValueError(
             "Latest `hgemm.py` requires b_to_lds=False when b_preshuffle=True"
         )
+    if c_to_lds:
+        raise ValueError("Current `hgemm.py` kernel does not support `c_to_lds=True`")
 
     _validate_hgemm_tiling(
         m,
         n,
         k,
+        dtype=dtype,
         tile_m=tile_m,
         tile_n=tile_n,
         tile_k=tile_k,
@@ -239,39 +336,47 @@ def _compile_flydsl_hgemm(
         stages=stages,
         block_m_warps=block_m_warps,
         block_n_warps=block_n_warps,
+        b_to_lds=b_to_lds,
     )
 
+    # `hgemm.py` now fixes the pipeline depth and async path internally.
+    # Keep these wrapper args for source compatibility, but only forward
+    # the kernel parameters that still exist on `compile_hgemm_kernel()`.
+    del async_copy
     kernel = compile_hgemm_kernel(
         dtype,
-        signal_state,
         n,
         k,
-        TILE_K=tile_k,
-        BLOCK_M_WARPS=block_m_warps,
-        BLOCK_N_WARPS=block_n_warps,
         TILE_M=tile_m,
         TILE_N=tile_n,
-        STAGES=stages,
-        ASYNC_COPY=async_copy,
-        B_TO_LDS=b_to_lds,
-        B_PRE_SHUFFLE=b_preshuffle,
+        TILE_K=tile_k,
         SPLIT_K=split_k,
-        C_TO_LDS=c_to_lds,
+        BLOCK_M_WARPS=block_m_warps,
+        BLOCK_N_WARPS=block_n_warps,
+        B_PRE_SHUFFLE=b_preshuffle,
+        B_TO_LDS=b_to_lds,
     )
 
     def launcher(
         out: torch.Tensor,
         a: torch.Tensor,
         b: torch.Tensor,
-        stream=None,
+        signal_state: int,
+        stream: Optional[torch.cuda.Stream] = None,
     ):
         runtime_m = int(a.shape[0])
         _check_split_k_counter_capacity(runtime_m, n, tile_m, tile_n, split_k)
-        semaphore = _get_split_k_global_semaphore(a.device)
-        launch_stream = (
-            torch.cuda.current_stream(device=a.device) if stream is None else stream
+        launch_stream = _normalize_launch_stream(a.device, stream)
+        semaphore = _get_split_k_global_semaphore(launch_stream)
+        return kernel(
+            out,
+            a,
+            b,
+            runtime_m,
+            semaphore,
+            signal_state,
+            stream=launch_stream,
         )
-        return kernel(out, a, b, runtime_m, semaphore, stream=launch_stream)
 
     return launcher
 
@@ -294,10 +399,11 @@ def flydsl_hgemm(
     b_preshuffle: bool = True,
     auto_shuffle_b: bool = False,
     c_to_lds: bool = False,
+    stream: Optional[torch.cuda.Stream] = None,
 ) -> torch.Tensor:
     """Run FlyDSL HGEMM.
     `a` is `(M, K)`.
-    `b` is `(N, K)`, optionally pre-shuffled via `shuffle_weight()`.
+    `b` is `(N, K)`, optionally pre-shuffled via `shuffle_weight()` / `hgemm_shuffle_b()`.
     Returns `(M, N)`.
     """
 
@@ -316,14 +422,14 @@ def flydsl_hgemm(
             raise ValueError(
                 "`b_preshuffle=True` expects `b` to be pre-shuffled. "
                 f"Use `shuffle_weight(b, layout={_get_flydsl_shuffle_layout(pack_n)})` "
-                "first or pass `auto_shuffle_b=True`."
+                "or `hgemm_shuffle_b(b)` first, or pass `auto_shuffle_b=True`."
             )
 
     if out is None:
         out = torch.empty((m, n), dtype=a.dtype, device=a.device)
 
-    _get_split_k_global_semaphore(a.device)
-    signal_state = _get_split_k_signal_state(a.device)
+    launch_stream = _normalize_launch_stream(a.device, stream)
+    signal_state = _get_split_k_signal_state(launch_stream)
 
     launcher = _compile_flydsl_hgemm(
         kernel_dtype,
@@ -342,10 +448,9 @@ def flydsl_hgemm(
         b_preshuffle=b_preshuffle,
         split_k=split_k,
         c_to_lds=c_to_lds,
-        signal_state=signal_state,
     )
 
-    launcher(out, a, b)
+    launcher(out, a, b, signal_state=signal_state, stream=launch_stream)
     if split_k > 1:
-        _advance_split_k_signal_state(a.device)
+        _advance_split_k_signal_state(launch_stream)
     return out

@@ -95,27 +95,18 @@ def ref_worker(device_id, num_devices, parts, nsamples, inputs, outputs):
         output = outputs[device_id * nsamples + i]
         F.linear(input[0], input[1], out=output)
         dist.all_reduce(output, group=group)
-    torch.cuda.synchronize()
-    dist.barrier(group=group)
-    with profile(
-        activities=[ProfilerActivity.CUDA],
-        profile_memory=False,
-        with_stack=True,
-        with_modules=True
-    ) as prof:
-    # if True:
-        # start = time.perf_counter()
+    if True:
+        dist.barrier(group=group)
         torch.cuda.synchronize()
+        start = time.perf_counter()
         for i in range(WARMUP_ITERS, nsamples):
             input = inputs[device_id * nsamples + i]
             output = outputs[device_id * nsamples + i]
             F.linear(input[0], input[1], out=output)
             dist.all_reduce(output, group=group)
+        dist.barrier(group=group)
         torch.cuda.synchronize()
-        # print(f"ref_worker:{time.perf_counter() - start}", flush=True)
-    table = prof.key_averages().table(sort_by="self_cuda_time_total", row_limit=-1)
-    print(table, flush=True)
-    dist.barrier(group=group)
+        print(f"worker:{(time.perf_counter() - start) / (nsamples - WARMUP_ITERS)}", flush=True)
     dist.destroy_process_group()
 
 
@@ -1097,26 +1088,17 @@ def worker(device_id, num_devices, parts, nsamples, inputs, outputs, bench_mode)
         input = inputs[device_id * nsamples + i]
         output = outputs[device_id * nsamples + i]
         fa.hgemm_ar_fusion(input[0], input[1], output)
-    torch.cuda.synchronize()
-    dist.barrier(group=group)
-    with profile(
-        activities=[ProfilerActivity.CUDA],
-        profile_memory=False,
-        with_stack=True,
-        with_modules=True
-    ) as prof:
-    # if True:
-        # start = time.perf_counter()
+    if True:
+        dist.barrier(group=group)
         torch.cuda.synchronize()
+        start = time.perf_counter()
         for i in range(WARMUP_ITERS, nsamples):
             input = inputs[device_id * nsamples + i]
             output = outputs[device_id * nsamples + i]
             fa.hgemm_ar_fusion(input[0], input[1], output, bench_mode=bench_mode)
+        dist.barrier(group=group)
         torch.cuda.synchronize()
-        # print(f"worker:{time.perf_counter() - start}", flush=True)
-    table = prof.key_averages().table(sort_by="self_cuda_time_total", row_limit=-1)
-    print(table, flush=True)
-    dist.barrier(group=group)
+        print(f"worker:{(time.perf_counter() - start) / (nsamples - WARMUP_ITERS)}", flush=True)
     dist.destroy_process_group()
 
 

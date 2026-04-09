@@ -932,7 +932,20 @@ def compile_hgemm_ar_kernel(
             rank, self_sg, sg_ptrs, tmp_ptrs, out_ptrs, 
             C, A, B, m, COUNTER, signal_state).launch(grid=(bm, bn, SPLIT_K), block=(BLOCK_THREADS, 1, 1), stream=stream)
     
-    return launch_hgemm_ar_kernel
+    _compile_hints = {}
+
+    def _launch(*args, **kwargs):
+        with CompilationContext.compile_hints(_compile_hints):
+            return launch_hgemm_ar_kernel(*args, **kwargs)
+
+    @functools.lru_cache(maxsize=1024)
+    def _compile(*args, **kwargs):
+        with CompilationContext.compile_hints(_compile_hints):
+            return flyc.compile(launch_hgemm_ar_kernel, *args, **kwargs)
+    
+    _launch.compile = _compile
+    
+    return _launch
 
 
 def hgemm_shuffle_b(x, layout=(16, 16), k_steps=2):
@@ -1011,11 +1024,13 @@ def hgemm_ar_(
     global SPLIT_K_COUNTER_MAX_LEN
     global SPLIT_K_GLOBAL_SEMAPHORE
     global SPLIT_K_GLOBAL_SEMAPHORE_STATE
-    if SPLIT_K_GLOBAL_SEMAPHORE.get(stream, None) is None:
-        SPLIT_K_GLOBAL_SEMAPHORE[stream] = torch.zeros(
-            (3 * SPLIT_K_COUNTER_MAX_LEN,), dtype=torch.int32, device=a.device)
-        SPLIT_K_GLOBAL_SEMAPHORE_STATE[stream] = int(0)
-    signal_state = SPLIT_K_GLOBAL_SEMAPHORE_STATE[stream]
+    device = a.device
+    lookup_key = (stream, device)
+    if SPLIT_K_GLOBAL_SEMAPHORE.get(lookup_key, None) is None:
+        SPLIT_K_GLOBAL_SEMAPHORE[lookup_key] = torch.zeros(
+            (3 * SPLIT_K_COUNTER_MAX_LEN,), dtype=torch.int32, device=device)
+        SPLIT_K_GLOBAL_SEMAPHORE_STATE[lookup_key] = int(0)
+    signal_state = SPLIT_K_GLOBAL_SEMAPHORE_STATE[lookup_key]
     k = a.shape[-1]
     a = a.view(-1, k)
     m = a.shape[0]
@@ -1033,13 +1048,13 @@ def hgemm_ar_(
         raise NotImplementedError()
     if kwargs['B_PRE_SHUFFLE'] and shuffle_b:
         b = hgemm_shuffle_b(b)
-    semaphore = SPLIT_K_GLOBAL_SEMAPHORE[stream]
+    semaphore = SPLIT_K_GLOBAL_SEMAPHORE[lookup_key]
     bm = (m + kwargs['TILE_M'] - 1) // kwargs['TILE_M']
     bn = n // kwargs['TILE_N']
     assert bm * bn * kwargs['SPLIT_K'] <= min(80, SPLIT_K_COUNTER_MAX_LEN)
     exe(rank, self_sg, sg_ptrs, tmp_ptrs, out_ptrs, c, a, b, m, semaphore, signal_state, stream)
     if kwargs['SPLIT_K'] > 1:
-        SPLIT_K_GLOBAL_SEMAPHORE_STATE[stream] = (signal_state + 1) % 3
+        SPLIT_K_GLOBAL_SEMAPHORE_STATE[lookup_key] = (signal_state + 1) % 3
 
 
 class GEMMARBackend(FlyDSLAllreduce):

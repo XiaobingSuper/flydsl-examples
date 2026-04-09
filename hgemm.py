@@ -733,11 +733,6 @@ def compile_hgemm_kernel(
                 with ir.InsertionPoint(cond_boundary_if.then_block):
                     pk_val = cs_.vec_load((m_local_idx, n_local_idx), LDG_VEC_SIZE)
                     linear_bytes_offset = C_.linear_offset((m_global_idx, n_global_idx)) * DTYPE_BYTES
-                    byte_offset_i64 = arith.index_cast(T.i64, linear_bytes_offset)
-                    addr_i64 = llvm.AddOp(out_base_int, byte_offset_i64, llvm.IntegerOverflowFlags(0)).result
-                    out_ptr = llvm.IntToPtrOp(_ptr_type, addr_i64).result
-                    out_ptr_v = out_ptr._value if hasattr(out_ptr, "_value") else out_ptr
-                    pk_val_v = pk_val._value if hasattr(pk_val, "_value") else pk_val
                     # split to vec2s
                     vec2_ty = T.vec(2, dtype_)
                     for vec_idx in range_constexpr(LDG_VEC_SIZE // 2):
@@ -793,7 +788,25 @@ def compile_hgemm_kernel(
         hgemm_kernel._func.__name__ = KERNEL_NAME
         hgemm_kernel(C, A, B, m, COUNTER, signal_state).launch(grid=(bm, bn, SPLIT_K), block=(BLOCK_THREADS, 1, 1), stream=stream)
     
-    return launch_hgemm_kernel
+    _compile_hints = {
+        "llvm_options": {
+            "enable-post-misched": False,
+            "lsr-drop-solution": True,
+        },
+    }
+
+    def _launch(*args, **kwargs):
+        with CompilationContext.compile_hints(_compile_hints):
+            return launch_hgemm_kernel(*args, **kwargs)
+
+    @functools.lru_cache(maxsize=1024)
+    def _compile(*args, **kwargs):
+        with CompilationContext.compile_hints(_compile_hints):
+            return flyc.compile(launch_hgemm_kernel, *args, **kwargs)
+    
+    _launch.compile = _compile
+    
+    return _launch
 
 
 def hgemm_shuffle_b(x, layout=(16, 16), k_steps=2):
@@ -865,11 +878,13 @@ def hgemm_splitk_(
     global SPLIT_K_COUNTER_MAX_LEN
     global SPLIT_K_GLOBAL_SEMAPHORE
     global SPLIT_K_GLOBAL_SEMAPHORE_STATE
-    if SPLIT_K_GLOBAL_SEMAPHORE.get(stream, None) is None:
-        SPLIT_K_GLOBAL_SEMAPHORE[stream] = torch.zeros(
-            (3 * SPLIT_K_COUNTER_MAX_LEN,), dtype=torch.int32, device=stream.device)
-        SPLIT_K_GLOBAL_SEMAPHORE_STATE[stream] = int(0)
-    signal_state = SPLIT_K_GLOBAL_SEMAPHORE_STATE[stream]
+    device = a.device
+    lookup_key = (stream, device)
+    if SPLIT_K_GLOBAL_SEMAPHORE.get(lookup_key, None) is None:
+        SPLIT_K_GLOBAL_SEMAPHORE[lookup_key] = torch.zeros(
+            (3 * SPLIT_K_COUNTER_MAX_LEN,), dtype=torch.int32, device=device)
+        SPLIT_K_GLOBAL_SEMAPHORE_STATE[lookup_key] = int(0)
+    signal_state = SPLIT_K_GLOBAL_SEMAPHORE_STATE[lookup_key]
     k = a.shape[-1]
     a = a.view(-1, k)
     m = a.shape[0]
@@ -887,14 +902,15 @@ def hgemm_splitk_(
         raise NotImplementedError()
     if kwargs['B_PRE_SHUFFLE'] and shuffle_b:
         b = hgemm_shuffle_b(b)
-    semaphore = SPLIT_K_GLOBAL_SEMAPHORE[stream]
+    semaphore = SPLIT_K_GLOBAL_SEMAPHORE[lookup_key]
     if kwargs['SPLIT_K'] > 1:
         bm = (m + kwargs['TILE_M'] - 1) // kwargs['TILE_M']
         bn = n // kwargs['TILE_N']
         assert bm * bn <= SPLIT_K_COUNTER_MAX_LEN
-    exe(c, a, b, m, semaphore, signal_state, stream)
+    exe_compiled = exe.compile(c, a, b, m, semaphore, signal_state, stream)
+    exe_compiled(c, a, b, m, semaphore, signal_state, stream)
     if kwargs['SPLIT_K'] > 1:
-        SPLIT_K_GLOBAL_SEMAPHORE_STATE[stream] = (signal_state + 1) % 3
+        SPLIT_K_GLOBAL_SEMAPHORE_STATE[lookup_key] = (signal_state + 1) % 3
 
 
 def func(a, b, c):

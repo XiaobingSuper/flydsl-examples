@@ -138,6 +138,7 @@ def compile_hgemm_kernel(
     BLOCK_N_WARPS: int = 4,
     B_PRE_SHUFFLE: bool = False,
     B_TO_LDS: bool = False,
+    RASTER_FACTOR: int = 1,
 ):
     IS_SPLIT_K = SPLIT_K > 1
     BLOCK_K = TILE_K
@@ -269,8 +270,8 @@ def compile_hgemm_kernel(
         tid = fx.Int32(fx.thread_idx.x)
         wid = tid // WARP_SIZE
         w_tid = tid % WARP_SIZE
-        block_m_idx = fx.block_idx.x
-        block_n_idx = fx.block_idx.y
+        block_m_idx = fx.block_idx.x // RASTER_FACTOR
+        block_n_idx = fx.block_idx.x % RASTER_FACTOR + fx.block_idx.y * RASTER_FACTOR
         ks_idx = fx.Index(fx.block_idx.z)
         ks_begin = arith.index_cast(T.i32, ks_idx * ks)
         counter_idx = fx.Int32(signal_state * SPLIT_K_COUNTER_MAX_LEN) + fx.block_idx.x * fx.Int32(n // BLOCK_N) + fx.block_idx.y
@@ -785,6 +786,8 @@ def compile_hgemm_kernel(
         
         bm = (m + BLOCK_M - 1) // BLOCK_M
         bn = n // BLOCK_N
+        bm = bm * RASTER_FACTOR
+        bn = bn // RASTER_FACTOR
         hgemm_kernel._func.__name__ = KERNEL_NAME
         hgemm_kernel(C, A, B, m, COUNTER, signal_state).launch(grid=(bm, bn, SPLIT_K), block=(BLOCK_THREADS, 1, 1), stream=stream)
     

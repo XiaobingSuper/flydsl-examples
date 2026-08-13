@@ -2,8 +2,7 @@
 
 Date: 2026-08-13
 
-This report supersedes the Kimi-K3 comparison as the primary optimization
-reference. DeepSeek V4 was selected because PR #4246 contains a complete gfx1250
+DeepSeek V4 was selected because PR #4246 contains a complete gfx1250
 retune for its 180 BF16 GEMM shapes, while the Kimi-K3 block was not retuned
 against the final cluster-grid round-up.
 
@@ -62,7 +61,9 @@ Source hashes:
 |---|---|
 | `kernels/gemm_a16w16_gfx1250.py` | `0dc638c71165998814a3c8cd0154428aaf9e92aa30e36433f0767acb8b9cb172` |
 | `kernels/gemm_a16w16_gfx1250_all_compute.py` | `5c28d64148f73733ed728741625db285ff3d581b7709e8f4f1d8f20cfd118ea6` |
-| `benchmark_model_gemm_backends.py` | `77d8bf98e4da8b71c7dfc631a52ecdb4b3bea5bed5056695babd9db19649b8cb` |
+| benchmark-time `benchmark_model_gemm_backends.py` | `77d8bf98e4da8b71c7dfc631a52ecdb4b3bea5bed5056695babd9db19649b8cb` |
+| current `benchmark_model_gemm_backends.py` | `30334d3022f177147207bda17a49fd35231ac76222d45d172955fd3e972700aa` |
+| `augment_gemm_benchmark_metrics.py` | `f6740204934ed41a8dc04cc236cf1e002f250d393d28ec1388997d61e9858aeb` |
 
 ## Representative DSv4 shapes
 
@@ -130,6 +131,8 @@ shape heuristic and is marked with `*`; it is not an exhaustive Opus retune.
 - BF16 inputs, FP32 accumulation, BF16 output, no bias
 - `kernel_us`: median sum of profiler GPU kernel durations per call
 - `e2e_us`: median HIP-event interval over ten calls, divided by ten
+- `TFLOPS = 2*M*N*K / time_us / 1e6`
+- `effective bandwidth = 2*(M*K + N*K + M*N) / time_us / 1e3 GB/s`
 
 ## Kernel-only latency
 
@@ -160,6 +163,24 @@ Lower is better.
 | (2048,1024,7168) | 530.21 | 302.94 | 495.11 | **644.21** |
 | (4096,2048,4096) | 775.38 | 581.45 | 169.97* | **784.96** |
 | (16384,2048,4096) | **793.35** | 602.04 | 171.59* | 775.56 |
+
+## Kernel-only effective memory bandwidth
+
+This is an algorithmic lower-bound traffic rate, not a hardware-counter
+measurement of HBM traffic. It assumes each BF16 A, B, and C element is moved
+once. It excludes split-K workspace traffic and cache effects, so values can
+exceed physical HBM bandwidth.
+
+| Shape | Triton GB/s | Gluon GB/s | Opus GB/s | FlyDSL GB/s |
+|---|---:|---:|---:|---:|
+| (1,1024,4096) | 606.0 | **1906.4** | 1619.5 | 879.2 |
+| (32,64,7168) | 67.8 | 80.3 | **268.2** | 78.7 |
+| (32,32320,7168) | **6830.2** | 6629.3 | 1001.3* | 6765.2 |
+| (128,2048,4096) | 1299.5 | 1449.7 | **1601.9** | 1519.4 |
+| (512,2048,7168) | 913.2 | 770.3 | 771.4 | **1246.5** |
+| (2048,1024,7168) | 850.6 | 486.0 | 794.3 | **1033.5** |
+| (4096,2048,4096) | 757.2 | 567.8 | 166.0* | **766.6** |
+| (16384,2048,4096) | **629.5** | 477.7 | 136.2* | 615.4 |
 
 ## End-to-end GPU interval
 

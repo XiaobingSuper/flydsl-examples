@@ -213,10 +213,21 @@ def _load_tuned_rows(path: Path) -> dict[tuple[int, int, int], dict[str, str]]:
         }
 
 
+def _estimated_bytes_moved(m: int, n: int, k: int) -> float:
+    return 2.0 * (m * k + n * k + m * n)
+
+
 def _arithmetic_intensity(m: int, n: int, k: int) -> float:
-    flops = 2.0 * m * n * k
-    bytes_moved = 2.0 * (m * k + n * k + m * n)
-    return flops / bytes_moved
+    return 2.0 * m * n * k / _estimated_bytes_moved(m, n, k)
+
+
+def _effective_bandwidth_gbps(
+    m: int,
+    n: int,
+    k: int,
+    time_us: float,
+) -> float:
+    return _estimated_bytes_moved(m, n, k) / time_us / 1.0e3
 
 
 def _median_us(
@@ -621,6 +632,12 @@ def main() -> None:
                 "kernels_per_call": kernels_per_call,
                 "tflops": 2.0 * m * n * k / kernel_us / 1.0e6,
                 "e2e_tflops": 2.0 * m * n * k / us / 1.0e6,
+                "effective_bandwidth_gbps": _effective_bandwidth_gbps(
+                    m, n, k, kernel_us
+                ),
+                "e2e_effective_bandwidth_gbps": _effective_bandwidth_gbps(
+                    m, n, k, us
+                ),
                 "config": triton_cfg,
                 "error": triton_err,
             }
@@ -657,6 +674,12 @@ def main() -> None:
                 "kernels_per_call": kernels_per_call,
                 "tflops": 2.0 * m * n * k / kernel_us / 1.0e6,
                 "e2e_tflops": 2.0 * m * n * k / us / 1.0e6,
+                "effective_bandwidth_gbps": _effective_bandwidth_gbps(
+                    m, n, k, kernel_us
+                ),
+                "e2e_effective_bandwidth_gbps": _effective_bandwidth_gbps(
+                    m, n, k, us
+                ),
                 "error": gluon_err,
             }
         except Exception as exc:  # noqa: BLE001
@@ -702,6 +725,12 @@ def main() -> None:
                 "kernels_per_call": kernels_per_call,
                 "tflops": 2.0 * m * n * k / kernel_us / 1.0e6,
                 "e2e_tflops": 2.0 * m * n * k / us / 1.0e6,
+                "effective_bandwidth_gbps": _effective_bandwidth_gbps(
+                    m, n, k, kernel_us
+                ),
+                "e2e_effective_bandwidth_gbps": _effective_bandwidth_gbps(
+                    m, n, k, us
+                ),
                 "mode": "csv-explicit" if explicit_opus else "heuristic",
                 "kernelId": opus_kwargs.get("kernelId"),
                 "splitK": opus_kwargs.get("splitK"),
@@ -765,6 +794,12 @@ def main() -> None:
                 "kernels_per_call": kernels_per_call,
                 "tflops": 2.0 * m * n * k / kernel_us / 1.0e6,
                 "e2e_tflops": 2.0 * m * n * k / us / 1.0e6,
+                "effective_bandwidth_gbps": _effective_bandwidth_gbps(
+                    m, n, k, kernel_us
+                ),
+                "e2e_effective_bandwidth_gbps": _effective_bandwidth_gbps(
+                    m, n, k, us
+                ),
                 "timing_scope": "kernel-only; input/output padding outside timing",
                 "config": prepared_flydsl.config,
                 "error": flydsl_err,
@@ -773,6 +808,7 @@ def main() -> None:
         row = {
             **shape,
             "arithmetic_intensity_flop_per_byte": _arithmetic_intensity(m, n, k),
+            "estimated_bytes_moved": _estimated_bytes_moved(m, n, k),
             "csv_selected_backend": csv_row["libtype"] if csv_row else None,
             "csv_us": float(csv_row["us"]) if csv_row else None,
             "backends": {
@@ -803,6 +839,18 @@ def main() -> None:
             ),
             "dtype": "bf16 inputs, fp32 accumulation, bf16 output",
             "bias": False,
+        },
+        "derived_metrics": {
+            "flops": "2*M*N*K",
+            "estimated_bytes_moved": "2*(M*K + N*K + M*N)",
+            "tflops": "flops / time_us / 1e6",
+            "effective_bandwidth_gbps": (
+                "estimated_bytes_moved / time_us / 1e3"
+            ),
+            "bandwidth_note": (
+                "Algorithmic lower-bound effective bandwidth, not measured "
+                "HBM traffic; excludes cache and split-K workspace effects."
+            ),
         },
         "results": results,
     }

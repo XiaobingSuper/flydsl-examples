@@ -74,7 +74,9 @@
             "rel_l2": 0.0,
             "max_ref": 243.0,
             "passed": true
-          }
+          },
+          "effective_bandwidth_gbps": 605.9993506259234,
+          "e2e_effective_bandwidth_gbps": 219.84671039518233
         },
         "aiter_gluon": {
           "status": "ok",
@@ -90,7 +92,9 @@
             "rel_l2": 0.0,
             "max_ref": 243.0,
             "passed": true
-          }
+          },
+          "effective_bandwidth_gbps": 1906.446033367251,
+          "e2e_effective_bandwidth_gbps": 95.6245568899216
         },
         "aiter_opus_pr4246": {
           "status": "ok",
@@ -109,7 +113,9 @@
             "rel_l2": 0.0026413763407617807,
             "max_ref": 243.0,
             "passed": true
-          }
+          },
+          "effective_bandwidth_gbps": 1619.52333204781,
+          "e2e_effective_bandwidth_gbps": 259.283720355026
         },
         "local_flydsl": {
           "status": "ok",
@@ -139,9 +145,12 @@
             "rel_l2": 0.0,
             "max_ref": 243.0,
             "passed": true
-          }
+          },
+          "effective_bandwidth_gbps": 879.1843399979067,
+          "e2e_effective_bandwidth_gbps": 815.1530790698756
         }
-      }
+      },
+      "estimated_bytes_moved": 8398848.0
     },
     {
       "name": "decode_skinny_n",
@@ -181,7 +190,9 @@
             "rel_l2": 8.164757673512213e-06,
             "max_ref": 320.0,
             "passed": true
-          }
+          },
+          "effective_bandwidth_gbps": 67.76396661757504,
+          "e2e_effective_bandwidth_gbps": 36.3510733578824
         },
         "aiter_gluon": {
           "status": "ok",
@@ -197,7 +208,9 @@
             "rel_l2": 8.164757673512213e-06,
             "max_ref": 320.0,
             "passed": true
-          }
+          },
+          "effective_bandwidth_gbps": 80.32540952602604,
+          "e2e_effective_bandwidth_gbps": 16.01762917899605
         },
         "aiter_opus_pr4246": {
           "status": "ok",
@@ -216,7 +229,9 @@
             "rel_l2": 0.0025807181373238564,
             "max_ref": 320.0,
             "passed": true
-          }
+          },
+          "effective_bandwidth_gbps": 268.2378546443862,
+          "e2e_effective_bandwidth_gbps": 42.5527611335073
         },
         "local_flydsl": {
           "status": "ok",
@@ -246,9 +261,12 @@
             "rel_l2": 8.164757673512213e-06,
             "max_ref": 320.0,
             "passed": true
-          }
+          },
+          "effective_bandwidth_gbps": 78.67495012824185,
+          "e2e_effective_bandwidth_gbps": 75.72992140220832
         }
-      }
+      },
+      "estimated_bytes_moved": 1380352.0
     },
     {
       "name": "decode_wide_n",
@@ -288,7 +306,9 @@
             "rel_l2": 6.727486470481381e-05,
             "max_ref": 394.0,
             "passed": true
-          }
+          },
+          "effective_bandwidth_gbps": 6830.239815853339,
+          "e2e_effective_bandwidth_gbps": 6687.405629293903
         },
         "aiter_gluon": {
           "status": "ok",
@@ -304,7 +324,9 @@
             "rel_l2": 6.727486470481381e-05,
             "max_ref": 394.0,
             "passed": true
-          }
+          },
+          "effective_bandwidth_gbps": 6629.290377664581,
+          "e2e_effective_bandwidth_gbps": 5309.912442934229
         },
         "aiter_opus_pr4246": {
           "status": "ok",
@@ -323,7 +345,9 @@
             "rel_l2": 6.727486470481381e-05,
             "max_ref": 394.0,
             "passed": true
-          }
+          },
+          "effective_bandwidth_gbps": 1001.272908788253,
+          "e2e_effective_bandwidth_gbps": 812.2390966163312
         },
         "local_flydsl": {
           "status": "ok",
@@ -353,9 +377,12 @@
             "rel_l2": 6.727486470481381e-05,
             "max_ref": 394.0,
             "passed": true
-          }
+          },
+          "effective_bandwidth_gbps": 6765.222502976966,
+          "e2e_effective_bandwidth_gbps": 6596.455457713369
         }
-      }
+      },
+      "estimated_bytes_moved": 465866752.0
     },
     {
       "name": "prefill_opus",
@@ -395,7 +422,9 @@
             "rel_l2": 5.2665633120341226e-05,
             "max_ref": 292.0,
             "passed": true
-          }
+          },
+          "effective_bandwidth_gbps": 1299.5347190255413,
+          "e2e_effective_bandwidth_gbps": 476.8533460715098
         },
         "aiter_gluon": {
           "status": "ok",
@@ -411,7 +440,9 @@
             "rel_l2": 5.2665633120341226e-05,
             "max_ref": 292.0,
             "passed": true
-          }
+          },
+          "effective_bandwidth_gbps": 1449.6824142834685,
+          "e2e_effective_bandwidth_gbps": 195.45783782801186
         },
         "aiter_opus_pr4246": {
           "status": "ok",
@@ -430,7 +461,9 @@
             "rel_l2": 0.0027178009040653706,
             "max_ref": 292.0,
             "passed": true
-          }
+          },
+          "effective_bandwidth_gbps": 1601.927542557845,
+          "e2e_effective_bandwidth_gbps": 553.0522522094955
         },
         "local_flydsl": {
           "status": "ok",
@@ -460,9 +493,12 @@
             "rel_l2": 5.2665633120341226e-05,
             "max_ref": 292.0,
             "passed": true
-          }
+          },
+          "effective_bandwidth_gbps": 1519.42369793823,
+          "e2e_effective_bandwidth_gbps": 1380.1307863718346
         }
-      }
+      },
+      "estimated_bytes_moved": 18350080.0
     },
     {
       "name": "transition_opus",
@@ -502,7 +538,9 @@
             "rel_l2": 5.9821388276759535e-05,
             "max_ref": 438.0,
             "passed": true
-          }
+          },
+          "effective_bandwidth_gbps": 913.2432267024444,
+          "e2e_effective_bandwidth_gbps": 877.3662679316291
         },
         "aiter_gluon": {
           "status": "ok",
@@ -518,7 +556,9 @@
             "rel_l2": 5.9821388276759535e-05,
             "max_ref": 438.0,
             "passed": true
-          }
+          },
+          "effective_bandwidth_gbps": 770.2540624782887,
+          "e2e_effective_bandwidth_gbps": 449.86251303787583
         },
         "aiter_opus_pr4246": {
           "status": "ok",
@@ -537,7 +577,9 @@
             "rel_l2": 5.9821388276759535e-05,
             "max_ref": 438.0,
             "passed": true
-          }
+          },
+          "effective_bandwidth_gbps": 771.4256854830717,
+          "e2e_effective_bandwidth_gbps": 743.1481251817646
         },
         "local_flydsl": {
           "status": "ok",
@@ -567,9 +609,12 @@
             "rel_l2": 5.9821388276759535e-05,
             "max_ref": 438.0,
             "passed": true
-          }
+          },
+          "effective_bandwidth_gbps": 1246.4599370301355,
+          "e2e_effective_bandwidth_gbps": 1172.281866208373
         }
-      }
+      },
+      "estimated_bytes_moved": 38797312.0
     },
     {
       "name": "compute_opus",
@@ -609,7 +654,9 @@
             "rel_l2": 6.021561421221122e-05,
             "max_ref": 446.0,
             "passed": true
-          }
+          },
+          "effective_bandwidth_gbps": 850.6365688487575,
+          "e2e_effective_bandwidth_gbps": 820.9861607491255
         },
         "aiter_gluon": {
           "status": "ok",
@@ -625,7 +672,9 @@
             "rel_l2": 6.021561421221122e-05,
             "max_ref": 446.0,
             "passed": true
-          }
+          },
+          "effective_bandwidth_gbps": 486.02906027689795,
+          "e2e_effective_bandwidth_gbps": 482.8591982815657
         },
         "aiter_opus_pr4246": {
           "status": "ok",
@@ -644,7 +693,9 @@
             "rel_l2": 0.0028611873276531696,
             "max_ref": 446.0,
             "passed": true
-          }
+          },
+          "effective_bandwidth_gbps": 794.3234306040439,
+          "e2e_effective_bandwidth_gbps": 748.4488135670506
         },
         "local_flydsl": {
           "status": "ok",
@@ -674,9 +725,12 @@
             "rel_l2": 6.021561421221122e-05,
             "max_ref": 446.0,
             "passed": true
-          }
+          },
+          "effective_bandwidth_gbps": 1033.5446656238632,
+          "e2e_effective_bandwidth_gbps": 1002.7961927788178
         }
-      }
+      },
+      "estimated_bytes_moved": 48234496.0
     },
     {
       "name": "compute_crossover",
@@ -716,7 +770,9 @@
             "rel_l2": 5.1764898671535775e-05,
             "max_ref": 332.0,
             "passed": true
-          }
+          },
+          "effective_bandwidth_gbps": 757.2056371083313,
+          "e2e_effective_bandwidth_gbps": 752.9070458588062
         },
         "aiter_gluon": {
           "status": "ok",
@@ -732,7 +788,9 @@
             "rel_l2": 0.00031423638574779034,
             "max_ref": 332.0,
             "passed": true
-          }
+          },
+          "effective_bandwidth_gbps": 567.8241416072984,
+          "e2e_effective_bandwidth_gbps": 561.7621635028016
         },
         "aiter_opus_pr4246": {
           "status": "ok",
@@ -751,7 +809,9 @@
             "rel_l2": 5.1764898671535775e-05,
             "max_ref": 332.0,
             "passed": true
-          }
+          },
+          "effective_bandwidth_gbps": 165.98861236018968,
+          "e2e_effective_bandwidth_gbps": 126.16944673999639
         },
         "local_flydsl": {
           "status": "ok",
@@ -781,9 +841,12 @@
             "rel_l2": 5.1764898671535775e-05,
             "max_ref": 332.0,
             "passed": true
-          }
+          },
+          "effective_bandwidth_gbps": 766.5642126906166,
+          "e2e_effective_bandwidth_gbps": 752.6879192727425
         }
-      }
+      },
+      "estimated_bytes_moved": 67108864.0
     },
     {
       "name": "compute_large",
@@ -823,7 +886,9 @@
             "rel_l2": 5.3527866839431226e-05,
             "max_ref": 352.0,
             "passed": true
-          }
+          },
+          "effective_bandwidth_gbps": 629.4881868401438,
+          "e2e_effective_bandwidth_gbps": 642.6687392499558
         },
         "aiter_gluon": {
           "status": "ok",
@@ -839,7 +904,9 @@
             "rel_l2": 0.00024554302217438817,
             "max_ref": 352.0,
             "passed": true
-          }
+          },
+          "effective_bandwidth_gbps": 477.6933748305324,
+          "e2e_effective_bandwidth_gbps": 476.5691174354194
         },
         "aiter_opus_pr4246": {
           "status": "ok",
@@ -858,7 +925,9 @@
             "rel_l2": 5.3527866839431226e-05,
             "max_ref": 352.0,
             "passed": true
-          }
+          },
+          "effective_bandwidth_gbps": 136.15222064389962,
+          "e2e_effective_bandwidth_gbps": 127.38175086308166
         },
         "local_flydsl": {
           "status": "ok",
@@ -888,9 +957,19 @@
             "rel_l2": 5.3527866839431226e-05,
             "max_ref": 352.0,
             "passed": true
-          }
+          },
+          "effective_bandwidth_gbps": 615.3753921856301,
+          "e2e_effective_bandwidth_gbps": 656.4599929858703
         }
-      }
+      },
+      "estimated_bytes_moved": 218103808.0
     }
-  ]
+  ],
+  "derived_metrics": {
+    "flops": "2*M*N*K",
+    "estimated_bytes_moved": "2*(M*K + N*K + M*N)",
+    "tflops": "flops / time_us / 1e6",
+    "effective_bandwidth_gbps": "estimated_bytes_moved / time_us / 1e3",
+    "bandwidth_note": "Algorithmic lower-bound effective bandwidth, not measured HBM traffic; excludes cache and split-K workspace effects."
+  }
 }

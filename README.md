@@ -31,6 +31,38 @@ to CUDA/CuTeDSL, but targets AMD GPUs through FlyDSL.
 HTI currently requires `stages=2`, `m_waves=2`, and `k_waves=1`.
 Inputs and dimensions must satisfy the kernel's vector-alignment constraints.
 
+### gfx1250 A16W16 GEMM
+
+`kernels/gemm_a16w16_gfx1250.py` provides a wave32 tile-layout implementation
+for gfx1250:
+
+- gfx1250 `16x16x32` FP16/BF16 WMMA with FP32 accumulation
+- `TiledMma`-derived A, B, and C thread/value layouts
+- Opus-style 2-producer / 2-consumer wave specialization
+- TDM global-to-LDS loads with a configurable circular LDS pipeline
+- Per-slot DATA/FREE_A/FREE_B named barriers
+- 128-bit layout-driven LDS-to-register copies
+- Grouped-M tile swizzle and optional cluster multicast
+- Cached `flyc.compile()` fast dispatch for repeated calls
+- FP16, BF16, or FP32 output
+- Optional preallocated output plus automatic padding/non-contiguous handling
+
+`kernels/gemm_a16w16_gfx1250_all_compute.py` contains the experimental
+four/eight-wave all-compute pipeline used for scheduler and TDM studies.
+
+```python
+import torch
+
+from kernels.gemm_a16w16_gfx1250 import gemm_a16w16
+
+a = torch.randn((1024, 1024), device="cuda", dtype=torch.bfloat16)
+b = torch.randn((2048, 1024), device="cuda", dtype=torch.bfloat16)
+c = gemm_a16w16(a, b)  # c = a @ b.T
+```
+
+The current gfx1250 implementation and benchmarks were validated with
+FlyDSL 0.2.4.
+
 ## Layout Convention
 
 Layout characters describe physical tensor strides without changing logical
@@ -108,6 +140,27 @@ Run a focused layout test:
 ```bash
 pytest -sv test_gemm_a16w16_gfx950.py -k "main_loop and nt"
 ```
+
+Run the gfx1250 correctness suite:
+
+```bash
+pytest -sv test_gemm_a16w16_gfx1250.py
+```
+
+Run the standalone large-square benchmark:
+
+```bash
+python benchmark_gemm_a16w16_gfx1250.py
+```
+
+Run the reproducible DeepSeek V4 multi-backend comparison and see the report:
+
+```bash
+python benchmark_model_gemm_backends.py --suite dsv4
+```
+
+See `DSV4_GFX1250_GEMM_TUNED_BACKEND_BENCHMARK.md` for the exact Docker image,
+package versions, tuning methodology, results, and reproduction command.
 
 After changing FlyDSL compiler or kernel sources, clear the JIT cache when
 needed:

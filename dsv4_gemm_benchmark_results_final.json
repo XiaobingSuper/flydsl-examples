@@ -1,0 +1,896 @@
+{
+  "suite": "dsv4",
+  "tuned_config": "/home/xiaobizh/aiter/aiter/configs/model_configs/dsv4_bf16_tuned_gemm.csv",
+  "environment": {
+    "docker_image": "rocm/fw-bringup:gfx1250-atom-dev-20260729",
+    "python": "3.12.3 (main, Jun 19 2026, 12:46:00) [GCC 13.3.0]",
+    "torch": "2.11.0+rocm7.15.0a20260712",
+    "torch_hip": "7.15.0",
+    "triton": "3.8.0",
+    "flydsl_package": "0.2.4",
+    "flydsl_module": "/usr/local/lib/python3.12/dist-packages/flydsl/__init__.py",
+    "aiter_module": "/home/xiaobizh/aiter/aiter/__init__.py",
+    "aiter_git": {
+      "commit": "0f144e5e4449a8b0a125715997c2386cc190f6f6",
+      "branch": "pr-4246",
+      "status": ""
+    },
+    "flydsl_examples_git": {
+      "commit": "82a86966f72eed9e3e201991556fb10dd0fac647",
+      "branch": "xiaobing/455_gemm",
+      "status": "M README.md\n?? KIMIK3_GFX1250_GEMM_BACKEND_BENCHMARK.md\n?? benchmark_gemm_a16w16_gfx1250.py\n?? benchmark_kimik3_gemm_backends.py\n?? dsv4_compute_retest.json\n?? dsv4_gemm_benchmark_results.json\n?? dsv4_smoke.json\n?? kernels/gemm_a16w16_gfx1250.py\n?? kernels/gemm_a16w16_gfx1250_all_compute.py\n?? kimik3_gemm_benchmark_results.json\n?? test_gemm_a16w16_gfx1250.py"
+    },
+    "gpu_name": "AMD Radeon Graphics",
+    "gpu_properties": "_CudaDeviceProperties(name='AMD Radeon Graphics', major=12, minor=5, gcnArchName='gfx1250', total_memory=442368MB, multi_processor_count=256, uuid=39353939-6661-3565-6631-336535643662, pci_bus_id=1, pci_device_id=0, pci_domain_id=4, L2_cache_size=4MB)",
+    "rocr_visible_devices": "3"
+  },
+  "settings": {
+    "warmup": 20,
+    "iterations": 50,
+    "tune_warmup": 3,
+    "tune_iterations": 8,
+    "batch_repeats": 10,
+    "tune_batch_repeats": 3,
+    "timing": "kernel_us = median sum of torch.profiler GPU kernel durations per call; e2e_us = median batched HIP-event elapsed time",
+    "dtype": "bf16 inputs, fp32 accumulation, bf16 output",
+    "bias": false
+  },
+  "results": [
+    {
+      "name": "decode_projection",
+      "category": "memory/launch-bound",
+      "M": 1,
+      "N": 1024,
+      "K": 4096,
+      "reason": "single-token DSv4 projection; tuned Opus winner",
+      "arithmetic_intensity_flop_per_byte": 0.9987807851743478,
+      "csv_selected_backend": "opus",
+      "csv_us": 4.6851,
+      "backends": {
+        "aiter_triton": {
+          "status": "ok",
+          "kernel_us": 13.859500000000025,
+          "e2e_us": 38.203200697898865,
+          "e2e_min_us": 37.42800056934357,
+          "e2e_max_us": 40.216198563575745,
+          "kernels_per_call": 1,
+          "tflops": 0.6052605072333046,
+          "e2e_tflops": 0.21957867002649764,
+          "config": {
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 32,
+            "BLOCK_SIZE_K": 256,
+            "GROUP_SIZE_M": 1,
+            "num_warps": 4,
+            "num_stages": 3,
+            "waves_per_eu": 8,
+            "matrix_instr_nonkdim": 16,
+            "cache_modifier": ".cg",
+            "NUM_KSPLIT": 1,
+            "SPLITK_BLOCK_SIZE": 4096
+          },
+          "error": {
+            "max_abs": 0.0,
+            "rel_l2": 0.0,
+            "max_ref": 243.0,
+            "passed": true
+          }
+        },
+        "aiter_gluon": {
+          "status": "ok",
+          "kernel_us": 4.405500000000302,
+          "e2e_us": 87.83149719238281,
+          "e2e_min_us": 86.10090017318726,
+          "e2e_max_us": 370.83520889282227,
+          "kernels_per_call": 1,
+          "tflops": 1.9041216660990636,
+          "e2e_tflops": 0.09550797001246498,
+          "error": {
+            "max_abs": 0.0,
+            "rel_l2": 0.0,
+            "max_ref": 243.0,
+            "passed": true
+          }
+        },
+        "aiter_opus_pr4246": {
+          "status": "ok",
+          "kernel_us": 5.1860000000000355,
+          "e2e_us": 32.39250034093857,
+          "e2e_min_us": 31.310901045799255,
+          "e2e_max_us": 38.74199986457825,
+          "kernels_per_call": 2,
+          "tflops": 1.6175487851908874,
+          "e2e_tflops": 0.2589675977991189,
+          "mode": "csv-explicit",
+          "kernelId": 20237,
+          "splitK": 13,
+          "error": {
+            "max_abs": 1.0,
+            "rel_l2": 0.0026413763407617807,
+            "max_ref": 243.0,
+            "passed": true
+          }
+        },
+        "local_flydsl": {
+          "status": "ok",
+          "kernel_us": 9.552999999999997,
+          "e2e_us": 10.303399711847305,
+          "e2e_min_us": 10.119199752807617,
+          "e2e_max_us": 10.960499942302704,
+          "kernels_per_call": 1,
+          "tflops": 0.8781124254160999,
+          "e2e_tflops": 0.8141592323506975,
+          "timing_scope": "kernel-only; input/output padding outside timing",
+          "config": {
+            "reg_m": 1,
+            "reg_n": 1,
+            "reg_k": 4,
+            "waves_m": 1,
+            "waves_n": 2,
+            "num_stages": 3,
+            "traversal_order": "KMN",
+            "overlap_mode": "cross",
+            "swizzle_m": 32,
+            "cluster_m": 1,
+            "cluster_n": 1
+          },
+          "error": {
+            "max_abs": 0.0,
+            "rel_l2": 0.0,
+            "max_ref": 243.0,
+            "passed": true
+          }
+        }
+      }
+    },
+    {
+      "name": "decode_skinny_n",
+      "category": "memory/launch-bound",
+      "M": 32,
+      "N": 64,
+      "K": 7168,
+      "reason": "very skinny N projection with large K",
+      "arithmetic_intensity_flop_per_byte": 21.270029673590503,
+      "csv_selected_backend": "opus",
+      "csv_us": 4.6459,
+      "backends": {
+        "aiter_triton": {
+          "status": "ok",
+          "kernel_us": 20.369999999999948,
+          "e2e_us": 37.97279894351959,
+          "e2e_min_us": 37.383899092674255,
+          "e2e_max_us": 41.40599966049194,
+          "kernels_per_call": 1,
+          "tflops": 1.4413415807560175,
+          "e2e_tflops": 0.7731884089890239,
+          "config": {
+            "BLOCK_SIZE_M": 32,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 128,
+            "GROUP_SIZE_M": 1,
+            "num_warps": 4,
+            "num_stages": 3,
+            "waves_per_eu": 4,
+            "matrix_instr_nonkdim": 16,
+            "cache_modifier": ".cg",
+            "NUM_KSPLIT": 1,
+            "SPLITK_BLOCK_SIZE": 7168
+          },
+          "error": {
+            "max_abs": 0.03125,
+            "rel_l2": 8.164757673512213e-06,
+            "max_ref": 320.0,
+            "passed": true
+          }
+        },
+        "aiter_gluon": {
+          "status": "ok",
+          "kernel_us": 17.18450000000007,
+          "e2e_us": 86.17704808712006,
+          "e2e_min_us": 85.05539894104004,
+          "e2e_max_us": 101.52000188827515,
+          "kernels_per_call": 1,
+          "tflops": 1.708523844161883,
+          "e2e_tflops": 0.3406954479378151,
+          "error": {
+            "max_abs": 0.03125,
+            "rel_l2": 8.164757673512213e-06,
+            "max_ref": 320.0,
+            "passed": true
+          }
+        },
+        "aiter_opus_pr4246": {
+          "status": "ok",
+          "kernel_us": 5.145999999999958,
+          "e2e_us": 32.438600063323975,
+          "e2e_min_us": 31.471198797225952,
+          "e2e_max_us": 36.10599935054779,
+          "kernels_per_call": 2,
+          "tflops": 5.70542712786635,
+          "e2e_tflops": 0.905098492002909,
+          "mode": "csv-explicit",
+          "kernelId": 20001,
+          "splitK": 12,
+          "error": {
+            "max_abs": 2.0,
+            "rel_l2": 0.0025807181373238564,
+            "max_ref": 320.0,
+            "passed": true
+          }
+        },
+        "local_flydsl": {
+          "status": "ok",
+          "kernel_us": 17.54499999999996,
+          "e2e_us": 18.22730004787445,
+          "e2e_min_us": 17.87080019712448,
+          "e2e_max_us": 19.260799884796143,
+          "kernels_per_call": 1,
+          "tflops": 1.6734185237959571,
+          "e2e_tflops": 1.6107776754036476,
+          "timing_scope": "kernel-only; input/output padding outside timing",
+          "config": {
+            "reg_m": 1,
+            "reg_n": 4,
+            "reg_k": 4,
+            "waves_m": 2,
+            "waves_n": 1,
+            "num_stages": 3,
+            "traversal_order": "KMN",
+            "overlap_mode": "cross",
+            "swizzle_m": 32,
+            "cluster_m": 1,
+            "cluster_n": 1
+          },
+          "error": {
+            "max_abs": 0.03125,
+            "rel_l2": 8.164757673512213e-06,
+            "max_ref": 320.0,
+            "passed": true
+          }
+        }
+      }
+    },
+    {
+      "name": "decode_wide_n",
+      "category": "memory-bound",
+      "M": 32,
+      "N": 32320,
+      "K": 7168,
+      "reason": "wide DSv4 projection; tuned config selects Triton",
+      "arithmetic_intensity_flop_per_byte": 31.82640653437316,
+      "csv_selected_backend": "triton",
+      "csv_us": 45.6578,
+      "backends": {
+        "aiter_triton": {
+          "status": "ok",
+          "kernel_us": 68.20649999999989,
+          "e2e_us": 69.66330111026764,
+          "e2e_min_us": 69.36780214309692,
+          "e2e_max_us": 73.92269968986511,
+          "kernels_per_call": 1,
+          "tflops": 217.3819891066104,
+          "e2e_tflops": 212.83609021816332,
+          "config": {
+            "BLOCK_SIZE_M": 32,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 128,
+            "GROUP_SIZE_M": 1,
+            "num_warps": 4,
+            "num_stages": 3,
+            "waves_per_eu": 4,
+            "matrix_instr_nonkdim": 16,
+            "cache_modifier": ".cg",
+            "NUM_KSPLIT": 1,
+            "SPLITK_BLOCK_SIZE": 7168
+          },
+          "error": {
+            "max_abs": 1.0,
+            "rel_l2": 6.727486470481381e-05,
+            "max_ref": 394.0,
+            "passed": true
+          }
+        },
+        "aiter_gluon": {
+          "status": "ok",
+          "kernel_us": 70.27399999999989,
+          "e2e_us": 87.73529827594757,
+          "e2e_min_us": 85.630202293396,
+          "e2e_max_us": 93.98170113563538,
+          "kernels_per_call": 1,
+          "tflops": 210.98649059396112,
+          "e2e_tflops": 168.9954320707513,
+          "error": {
+            "max_abs": 1.0,
+            "rel_l2": 6.727486470481381e-05,
+            "max_ref": 394.0,
+            "passed": true
+          }
+        },
+        "aiter_opus_pr4246": {
+          "status": "ok",
+          "kernel_us": 465.2745,
+          "e2e_us": 573.5586404800415,
+          "e2e_min_us": 551.1851787567139,
+          "e2e_max_us": 597.2661972045898,
+          "kernels_per_call": 2,
+          "tflops": 31.866918646949276,
+          "e2e_tflops": 25.850651692023355,
+          "mode": "heuristic",
+          "kernelId": null,
+          "splitK": null,
+          "error": {
+            "max_abs": 1.0,
+            "rel_l2": 6.727486470481381e-05,
+            "max_ref": 394.0,
+            "passed": true
+          }
+        },
+        "local_flydsl": {
+          "status": "ok",
+          "kernel_us": 68.86200000000002,
+          "e2e_us": 70.62380015850067,
+          "e2e_min_us": 70.33929824829102,
+          "e2e_max_us": 71.4680016040802,
+          "kernels_per_call": 1,
+          "tflops": 215.31272167523446,
+          "e2e_tflops": 209.94147308307024,
+          "timing_scope": "kernel-only; input/output padding outside timing",
+          "config": {
+            "reg_m": 1,
+            "reg_n": 8,
+            "reg_k": 4,
+            "waves_m": 2,
+            "waves_n": 1,
+            "num_stages": 3,
+            "traversal_order": "KMN",
+            "overlap_mode": "cross",
+            "swizzle_m": 32,
+            "cluster_m": 1,
+            "cluster_n": 1
+          },
+          "error": {
+            "max_abs": 1.0,
+            "rel_l2": 6.727486470481381e-05,
+            "max_ref": 394.0,
+            "passed": true
+          }
+        }
+      }
+    },
+    {
+      "name": "prefill_opus",
+      "category": "mixed",
+      "M": 128,
+      "N": 2048,
+      "K": 4096,
+      "reason": "small prefill projection; tuned Opus cluster split-K",
+      "arithmetic_intensity_flop_per_byte": 117.02857142857142,
+      "csv_selected_backend": "opus",
+      "csv_us": 8.6068,
+      "backends": {
+        "aiter_triton": {
+          "status": "ok",
+          "kernel_us": 14.120499999999879,
+          "e2e_us": 38.48160058259964,
+          "e2e_min_us": 37.57629990577698,
+          "e2e_max_us": 44.61880028247833,
+          "kernels_per_call": 1,
+          "tflops": 152.0826916893891,
+          "e2e_tflops": 55.805465871682976,
+          "config": {
+            "BLOCK_SIZE_M": 32,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 128,
+            "GROUP_SIZE_M": 1,
+            "num_warps": 4,
+            "num_stages": 3,
+            "waves_per_eu": 4,
+            "matrix_instr_nonkdim": 16,
+            "cache_modifier": ".cg",
+            "NUM_KSPLIT": 1,
+            "SPLITK_BLOCK_SIZE": 4096
+          },
+          "error": {
+            "max_abs": 1.0,
+            "rel_l2": 5.2665633120341226e-05,
+            "max_ref": 292.0,
+            "passed": true
+          }
+        },
+        "aiter_gluon": {
+          "status": "ok",
+          "kernel_us": 12.657999999999902,
+          "e2e_us": 93.88254880905151,
+          "e2e_min_us": 92.12999939918518,
+          "e2e_max_us": 363.4480953216553,
+          "kernels_per_call": 1,
+          "tflops": 169.65426196871675,
+          "e2e_tflops": 22.874151535529617,
+          "error": {
+            "max_abs": 1.0,
+            "rel_l2": 5.2665633120341226e-05,
+            "max_ref": 292.0,
+            "passed": true
+          }
+        },
+        "aiter_opus_pr4246": {
+          "status": "ok",
+          "kernel_us": 11.454999999999927,
+          "e2e_us": 33.17964971065521,
+          "e2e_min_us": 32.396501302719116,
+          "e2e_max_us": 45.68040072917938,
+          "kernels_per_call": 2,
+          "tflops": 187.4712918376267,
+          "e2e_tflops": 64.72291500143125,
+          "mode": "csv-explicit",
+          "kernelId": 20292,
+          "splitK": 3,
+          "error": {
+            "max_abs": 1.0,
+            "rel_l2": 0.0027178009040653706,
+            "max_ref": 292.0,
+            "passed": true
+          }
+        },
+        "local_flydsl": {
+          "status": "ok",
+          "kernel_us": 12.076999999999998,
+          "e2e_us": 13.295899331569672,
+          "e2e_min_us": 12.658999860286713,
+          "e2e_max_us": 14.589899778366089,
+          "kernels_per_call": 1,
+          "tflops": 177.8159847644283,
+          "e2e_tflops": 161.5147343136867,
+          "timing_scope": "kernel-only; input/output padding outside timing",
+          "config": {
+            "reg_m": 1,
+            "reg_n": 4,
+            "reg_k": 4,
+            "waves_m": 2,
+            "waves_n": 1,
+            "num_stages": 3,
+            "traversal_order": "KMN",
+            "overlap_mode": "cross",
+            "swizzle_m": 32,
+            "cluster_m": 1,
+            "cluster_n": 1
+          },
+          "error": {
+            "max_abs": 1.0,
+            "rel_l2": 5.2665633120341226e-05,
+            "max_ref": 292.0,
+            "passed": true
+          }
+        }
+      }
+    },
+    {
+      "name": "transition_opus",
+      "category": "mixed",
+      "M": 512,
+      "N": 2048,
+      "K": 7168,
+      "reason": "mid-M transition still selected as Opus",
+      "arithmetic_intensity_flop_per_byte": 387.4594594594595,
+      "csv_selected_backend": "opus",
+      "csv_us": 20.227,
+      "backends": {
+        "aiter_triton": {
+          "status": "ok",
+          "kernel_us": 42.48300000000006,
+          "e2e_us": 44.220200181007385,
+          "e2e_min_us": 43.2327002286911,
+          "e2e_max_us": 49.365898966789246,
+          "kernels_per_call": 1,
+          "tflops": 353.8447269731417,
+          "e2e_tflops": 339.9438599207523,
+          "config": {
+            "BLOCK_SIZE_M": 64,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 64,
+            "GROUP_SIZE_M": 8,
+            "num_warps": 4,
+            "num_stages": 3,
+            "waves_per_eu": 2,
+            "matrix_instr_nonkdim": 16,
+            "cache_modifier": null,
+            "NUM_KSPLIT": 1,
+            "SPLITK_BLOCK_SIZE": 7168
+          },
+          "error": {
+            "max_abs": 1.0,
+            "rel_l2": 5.9821388276759535e-05,
+            "max_ref": 438.0,
+            "passed": true
+          }
+        },
+        "aiter_gluon": {
+          "status": "ok",
+          "kernel_us": 50.36949999999979,
+          "e2e_us": 86.24259829521179,
+          "e2e_min_us": 84.83200073242188,
+          "e2e_max_us": 94.36129927635193,
+          "kernels_per_call": 1,
+          "tflops": 298.4422226942905,
+          "e2e_tflops": 174.30348613272938,
+          "error": {
+            "max_abs": 1.0,
+            "rel_l2": 5.9821388276759535e-05,
+            "max_ref": 438.0,
+            "passed": true
+          }
+        },
+        "aiter_opus_pr4246": {
+          "status": "ok",
+          "kernel_us": 50.292999999999836,
+          "e2e_us": 52.206701040267944,
+          "e2e_min_us": 46.4044988155365,
+          "e2e_max_us": 56.873100996017456,
+          "kernels_per_call": 2,
+          "tflops": 298.896179110414,
+          "e2e_tflops": 287.9397708812372,
+          "mode": "csv-explicit",
+          "kernelId": 20420,
+          "splitK": 1,
+          "error": {
+            "max_abs": 1.0,
+            "rel_l2": 5.9821388276759535e-05,
+            "max_ref": 438.0,
+            "passed": true
+          }
+        },
+        "local_flydsl": {
+          "status": "ok",
+          "kernel_us": 31.126000000000005,
+          "e2e_us": 33.095549046993256,
+          "e2e_min_us": 31.170600652694702,
+          "e2e_max_us": 38.18809986114502,
+          "kernels_per_call": 1,
+          "tflops": 482.9526934395682,
+          "e2e_tflops": 454.21169821522267,
+          "timing_scope": "kernel-only; input/output padding outside timing",
+          "config": {
+            "reg_m": 4,
+            "reg_n": 4,
+            "reg_k": 4,
+            "waves_m": 2,
+            "waves_n": 1,
+            "num_stages": 3,
+            "traversal_order": "KMN",
+            "overlap_mode": "cross",
+            "swizzle_m": 32,
+            "cluster_m": 1,
+            "cluster_n": 1
+          },
+          "error": {
+            "max_abs": 1.0,
+            "rel_l2": 5.9821388276759535e-05,
+            "max_ref": 438.0,
+            "passed": true
+          }
+        }
+      }
+    },
+    {
+      "name": "compute_opus",
+      "category": "compute-bound",
+      "M": 2048,
+      "N": 1024,
+      "K": 7168,
+      "reason": "compute-heavy shape whose tuned winner remains Opus",
+      "arithmetic_intensity_flop_per_byte": 623.304347826087,
+      "csv_selected_backend": "opus",
+      "csv_us": 31.4179,
+      "backends": {
+        "aiter_triton": {
+          "status": "ok",
+          "kernel_us": 56.704000000000065,
+          "e2e_us": 58.751899003982544,
+          "e2e_min_us": 57.1615993976593,
+          "e2e_max_us": 63.64930272102356,
+          "kernels_per_call": 1,
+          "tflops": 530.2054717832951,
+          "e2e_tflops": 511.7242434999767,
+          "config": {
+            "BLOCK_SIZE_M": 128,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 128,
+            "GROUP_SIZE_M": 8,
+            "num_warps": 8,
+            "num_stages": 2,
+            "waves_per_eu": 1,
+            "matrix_instr_nonkdim": 16,
+            "cache_modifier": null,
+            "NUM_KSPLIT": 1,
+            "SPLITK_BLOCK_SIZE": 7168
+          },
+          "error": {
+            "max_abs": 1.0,
+            "rel_l2": 6.021561421221122e-05,
+            "max_ref": 446.0,
+            "passed": true
+          }
+        },
+        "aiter_gluon": {
+          "status": "ok",
+          "kernel_us": 99.24200000000019,
+          "e2e_us": 99.89350140094757,
+          "e2e_min_us": 95.81249952316284,
+          "e2e_max_us": 108.25599431991577,
+          "kernels_per_call": 1,
+          "tflops": 302.94402644041776,
+          "e2e_tflops": 300.96823767671845,
+          "error": {
+            "max_abs": 1.0,
+            "rel_l2": 6.021561421221122e-05,
+            "max_ref": 446.0,
+            "passed": true
+          }
+        },
+        "aiter_opus_pr4246": {
+          "status": "ok",
+          "kernel_us": 60.724000000000046,
+          "e2e_us": 64.44595158100128,
+          "e2e_min_us": 62.13799715042114,
+          "e2e_max_us": 71.16649746894836,
+          "kernels_per_call": 2,
+          "tflops": 495.10524787563367,
+          "e2e_tflops": 466.51139962161903,
+          "mode": "csv-explicit",
+          "kernelId": 20564,
+          "splitK": 2,
+          "error": {
+            "max_abs": 2.0,
+            "rel_l2": 0.0028611873276531696,
+            "max_ref": 446.0,
+            "passed": true
+          }
+        },
+        "local_flydsl": {
+          "status": "ok",
+          "kernel_us": 46.668999999999926,
+          "e2e_us": 48.099999129772186,
+          "e2e_min_us": 47.29070067405701,
+          "e2e_max_us": 49.32990074157715,
+          "kernels_per_call": 1,
+          "tflops": 644.2128837558132,
+          "e2e_tflops": 625.047226942484,
+          "timing_scope": "kernel-only; input/output padding outside timing",
+          "config": {
+            "reg_m": 4,
+            "reg_n": 8,
+            "reg_k": 4,
+            "waves_m": 2,
+            "waves_n": 1,
+            "num_stages": 3,
+            "traversal_order": "KMN",
+            "overlap_mode": "sync",
+            "swizzle_m": 32,
+            "cluster_m": 1,
+            "cluster_n": 1
+          },
+          "error": {
+            "max_abs": 1.0,
+            "rel_l2": 6.021561421221122e-05,
+            "max_ref": 446.0,
+            "passed": true
+          }
+        }
+      }
+    },
+    {
+      "name": "compute_crossover",
+      "category": "compute-bound",
+      "M": 4096,
+      "N": 2048,
+      "K": 4096,
+      "reason": "large-M backend crossover; tuned config selects Triton",
+      "arithmetic_intensity_flop_per_byte": 1024.0,
+      "csv_selected_backend": "triton",
+      "csv_us": 61.7837,
+      "backends": {
+        "aiter_triton": {
+          "status": "ok",
+          "kernel_us": 88.6269999999999,
+          "e2e_us": 89.13300037384033,
+          "e2e_min_us": 82.26419687271118,
+          "e2e_max_us": 97.68019914627075,
+          "kernels_per_call": 1,
+          "tflops": 775.3785723989313,
+          "e2e_tflops": 770.9768149594175,
+          "config": {
+            "BLOCK_SIZE_M": 256,
+            "BLOCK_SIZE_N": 256,
+            "BLOCK_SIZE_K": 64,
+            "GROUP_SIZE_M": 8,
+            "num_warps": 8,
+            "num_stages": 2,
+            "waves_per_eu": 1,
+            "matrix_instr_nonkdim": 16,
+            "cache_modifier": null,
+            "NUM_KSPLIT": 1,
+            "SPLITK_BLOCK_SIZE": 4096
+          },
+          "error": {
+            "max_abs": 1.0,
+            "rel_l2": 5.1764898671535775e-05,
+            "max_ref": 332.0,
+            "passed": true
+          }
+        },
+        "aiter_gluon": {
+          "status": "ok",
+          "kernel_us": 118.1859999999997,
+          "e2e_us": 119.46134567260742,
+          "e2e_min_us": 112.55550384521484,
+          "e2e_max_us": 129.40969467163086,
+          "kernels_per_call": 1,
+          "tflops": 581.4519210058736,
+          "e2e_tflops": 575.244455426869,
+          "error": {
+            "max_abs": 17.0,
+            "rel_l2": 0.00031423638574779034,
+            "max_ref": 332.0,
+            "passed": true
+          }
+        },
+        "aiter_opus_pr4246": {
+          "status": "ok",
+          "kernel_us": 404.29800000000023,
+          "e2e_us": 531.8947315216064,
+          "e2e_min_us": 518.7214851379395,
+          "e2e_max_us": 552.2607803344727,
+          "kernels_per_call": 2,
+          "tflops": 169.97233905683422,
+          "e2e_tflops": 129.1975134617563,
+          "mode": "heuristic",
+          "kernelId": null,
+          "splitK": null,
+          "error": {
+            "max_abs": 1.0,
+            "rel_l2": 5.1764898671535775e-05,
+            "max_ref": 332.0,
+            "passed": true
+          }
+        },
+        "local_flydsl": {
+          "status": "ok",
+          "kernel_us": 87.54499999999996,
+          "e2e_us": 89.1589492559433,
+          "e2e_min_us": 84.47139859199524,
+          "e2e_max_us": 91.72840118408203,
+          "kernels_per_call": 1,
+          "tflops": 784.9617537951914,
+          "e2e_tflops": 770.7524293352884,
+          "timing_scope": "kernel-only; input/output padding outside timing",
+          "config": {
+            "reg_m": 4,
+            "reg_n": 8,
+            "reg_k": 4,
+            "waves_m": 2,
+            "waves_n": 1,
+            "num_stages": 3,
+            "traversal_order": "KMN",
+            "overlap_mode": "cross",
+            "swizzle_m": 64,
+            "cluster_m": 1,
+            "cluster_n": 1
+          },
+          "error": {
+            "max_abs": 1.0,
+            "rel_l2": 5.1764898671535775e-05,
+            "max_ref": 332.0,
+            "passed": true
+          }
+        }
+      }
+    },
+    {
+      "name": "compute_large",
+      "category": "compute-bound",
+      "M": 16384,
+      "N": 2048,
+      "K": 4096,
+      "reason": "large DSv4 production GEMM",
+      "arithmetic_intensity_flop_per_byte": 1260.3076923076924,
+      "csv_selected_backend": "triton",
+      "csv_us": 209.0758,
+      "backends": {
+        "aiter_triton": {
+          "status": "ok",
+          "kernel_us": 346.478000000001,
+          "e2e_us": 339.3720507621765,
+          "e2e_min_us": 337.4592065811157,
+          "e2e_max_us": 345.82269191741943,
+          "kernels_per_call": 1,
+          "tflops": 793.3488040914552,
+          "e2e_tflops": 809.960355682406,
+          "config": {
+            "BLOCK_SIZE_M": 256,
+            "BLOCK_SIZE_N": 256,
+            "BLOCK_SIZE_K": 64,
+            "GROUP_SIZE_M": 8,
+            "num_warps": 8,
+            "num_stages": 3,
+            "waves_per_eu": 1,
+            "matrix_instr_nonkdim": 16,
+            "cache_modifier": null,
+            "NUM_KSPLIT": 1,
+            "SPLITK_BLOCK_SIZE": 4096
+          },
+          "error": {
+            "max_abs": 1.0,
+            "rel_l2": 5.3527866839431226e-05,
+            "max_ref": 352.0,
+            "passed": true
+          }
+        },
+        "aiter_gluon": {
+          "status": "ok",
+          "kernel_us": 456.57700000000006,
+          "e2e_us": 457.6540946960449,
+          "e2e_min_us": 457.11331367492676,
+          "e2e_max_us": 468.4202194213867,
+          "kernels_per_call": 1,
+          "tflops": 602.0406348633417,
+          "e2e_tflops": 600.6237246201471,
+          "error": {
+            "max_abs": 19.75,
+            "rel_l2": 0.00024554302217438817,
+            "max_ref": 352.0,
+            "passed": true
+          }
+        },
+        "aiter_opus_pr4246": {
+          "status": "ok",
+          "kernel_us": 1601.9114999999983,
+          "e2e_us": 1712.2060775756836,
+          "e2e_min_us": 1648.1422424316406,
+          "e2e_max_us": 1753.7933349609375,
+          "kernels_per_call": 2,
+          "tflops": 171.59369100228088,
+          "e2e_tflops": 160.54020047236384,
+          "mode": "heuristic",
+          "kernelId": null,
+          "splitK": null,
+          "error": {
+            "max_abs": 1.0,
+            "rel_l2": 5.3527866839431226e-05,
+            "max_ref": 352.0,
+            "passed": true
+          }
+        },
+        "local_flydsl": {
+          "status": "ok",
+          "kernel_us": 354.42400000000043,
+          "e2e_us": 332.2423458099365,
+          "e2e_min_us": 321.4361906051636,
+          "e2e_max_us": 340.34650325775146,
+          "kernels_per_call": 1,
+          "tflops": 775.5623404284124,
+          "e2e_tflops": 827.341578852346,
+          "timing_scope": "kernel-only; input/output padding outside timing",
+          "config": {
+            "reg_m": 4,
+            "reg_n": 8,
+            "reg_k": 4,
+            "waves_m": 2,
+            "waves_n": 1,
+            "num_stages": 3,
+            "traversal_order": "KMN",
+            "overlap_mode": "sync",
+            "swizzle_m": 32,
+            "cluster_m": 1,
+            "cluster_n": 1
+          },
+          "error": {
+            "max_abs": 1.0,
+            "rel_l2": 5.3527866839431226e-05,
+            "max_ref": 352.0,
+            "passed": true
+          }
+        }
+      }
+    }
+  ]
+}

@@ -110,7 +110,7 @@ def main() -> None:
         "--stages",
         type=int,
         default=3,
-        choices=range(2, 6),
+        choices=(2, 3),
         help="number of circular TDM/LDS pipeline stages",
     )
     parser.add_argument("--reg-m", type=int)
@@ -119,21 +119,18 @@ def main() -> None:
     parser.add_argument("--waves-m", type=int)
     parser.add_argument("--waves-n", type=int)
     parser.add_argument(
-        "--traversal",
-        choices=("KMN", "KNM", "MKN", "MNK", "NKM", "NMK"),
-        default="KMN",
-    )
-    parser.add_argument(
         "--overlap",
-        choices=("sync", "intra", "cross", "ring"),
+        choices=("sync", "cross"),
         default="cross",
     )
     parser.add_argument("--swizzle-m", type=int, default=32)
-    parser.add_argument("--no-expert-schedule", action="store_true")
-    parser.add_argument("--barrier-fences", action="store_true")
-    parser.add_argument("--cluster-m", type=int, default=1)
-    parser.add_argument("--cluster-n", type=int, default=1)
-    parser.add_argument("--grouped-inline", action="store_true")
+    parser.add_argument("--waves-per-eu", type=int)
+    parser.add_argument("--kernarg-preload", action="store_true")
+    parser.add_argument(
+        "--sched-strategy",
+        choices=("max-ilp", "max-memory-clause"),
+    )
+    parser.add_argument("--main-loop-unroll", action="store_true")
     args = parser.parse_args()
 
     torch.cuda.set_device(args.device)
@@ -141,14 +138,12 @@ def main() -> None:
     shapes = args.shapes or DEFAULT_SHAPES
     kernel_kwargs = {
         "num_stages": args.stages,
-        "traversal_order": args.traversal,
         "overlap_mode": args.overlap,
         "swizzle_m": args.swizzle_m,
-        "expert_schedule": not args.no_expert_schedule,
-        "barrier_fences": args.barrier_fences,
-        "cluster_m": args.cluster_m,
-        "cluster_n": args.cluster_n,
-        "grouped_inline": args.grouped_inline,
+        "waves_per_eu": args.waves_per_eu,
+        "kernarg_preload": args.kernarg_preload,
+        "sched_strategy": args.sched_strategy,
+        "main_loop_unroll": args.main_loop_unroll,
         **{
             name: value
             for name, value in (

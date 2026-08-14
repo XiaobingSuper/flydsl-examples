@@ -59,10 +59,10 @@ Source hashes:
 
 | File | SHA-256 |
 |---|---|
-| `kernels/gemm_a16w16_gfx1250.py` | `0dc638c71165998814a3c8cd0154428aaf9e92aa30e36433f0767acb8b9cb172` |
-| `kernels/gemm_a16w16_gfx1250_all_compute.py` | `5c28d64148f73733ed728741625db285ff3d581b7709e8f4f1d8f20cfd118ea6` |
+| benchmark-time `kernels/gemm_a16w16_gfx1250.py` | `0dc638c71165998814a3c8cd0154428aaf9e92aa30e36433f0767acb8b9cb172` |
+| current `kernels/gemm_a16w16_gfx1250.py` | `ec9140a161520fa1698c00de29c15003843e9f42cdccdf281cfa522d0def91ce` |
 | benchmark-time `benchmark_model_gemm_backends.py` | `77d8bf98e4da8b71c7dfc631a52ecdb4b3bea5bed5056695babd9db19649b8cb` |
-| current `benchmark_model_gemm_backends.py` | `30334d3022f177147207bda17a49fd35231ac76222d45d172955fd3e972700aa` |
+| current `benchmark_model_gemm_backends.py` | `dc367c2d20f5cc679364852a2fce11f27528505a36ba4e39531342d185dd07ca` |
 | `augment_gemm_benchmark_metrics.py` | `f6740204934ed41a8dc04cc236cf1e002f250d393d28ec1388997d61e9858aeb` |
 
 ## Representative DSv4 shapes
@@ -113,9 +113,10 @@ FlyDSL is also tuned per shape. Candidate axes include:
 - TileM/TileN wave decomposition
 - sync/cross-stage overlap
 - grouped-M swizzle 16/32/64
-- selected cluster multicast variants for small M
+- waves-per-EU, kernarg preload, LLVM scheduling, and loop unroll
 
-Input/output padding is materialized once outside the timed region.
+K padding and unsupported-layout materialization occur outside the timed
+region. Runtime TDM bounds handle M/N edge tiles.
 
 ### Opus
 
@@ -282,7 +283,7 @@ focus on:
 - shape dispatch for stages=2 vs 3
 - swizzle=32 vs 64
 - reducing conservative LDS/WMMA waits
-- avoiding regressions from all-compute variants
+- retaining compiler scheduling knobs only when per-shape measurements win
 
 ## Reproduction
 

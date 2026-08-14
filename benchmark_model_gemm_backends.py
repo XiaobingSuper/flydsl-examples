@@ -5,7 +5,7 @@ Backends:
   * Aiter generic Triton (forced backend, small per-shape config sweep)
   * Aiter Gluon (gfx1250 native auto-config path)
   * Aiter Opus (PR #4246 tuned kid when present, heuristic otherwise)
-  * Local FlyDSL tile-layout kernel (padding prepared outside timed region)
+  * Local FlyDSL tile-layout kernel (K/layout prep outside timed region)
 """
 
 from __future__ import annotations
@@ -364,7 +364,7 @@ def _triton_candidates(m: int, k: int) -> list[dict]:
     return configs
 
 
-def _flydsl_candidates(m: int) -> list[dict]:
+def _flydsl_candidates(m: int, k: int) -> list[dict]:
     def cfg(
         reg_m,
         reg_n,
@@ -375,8 +375,10 @@ def _flydsl_candidates(m: int) -> list[dict]:
         stages=3,
         overlap="cross",
         swizzle=32,
-        cluster_m=1,
-        cluster_n=1,
+        waves_per_eu=None,
+        kernarg_preload=False,
+        sched_strategy=None,
+        main_loop_unroll=False,
     ):
         return {
             "reg_m": reg_m,
@@ -385,11 +387,12 @@ def _flydsl_candidates(m: int) -> list[dict]:
             "waves_m": waves_m,
             "waves_n": waves_n,
             "num_stages": stages,
-            "traversal_order": "KMN",
             "overlap_mode": overlap,
             "swizzle_m": swizzle,
-            "cluster_m": cluster_m,
-            "cluster_n": cluster_n,
+            "waves_per_eu": waves_per_eu,
+            "kernarg_preload": kernarg_preload,
+            "sched_strategy": sched_strategy,
+            "main_loop_unroll": main_loop_unroll,
         }
 
     candidates = [{"name": "auto"}]
@@ -400,13 +403,18 @@ def _flydsl_candidates(m: int) -> list[dict]:
             cfg(1, 4, 4, 1, 2),
             cfg(1, 2, 2, 1, 2),
             cfg(1, 4, 2, 1, 2),
-            cfg(1, 4, 4, 1, 2, cluster_n=2),
         ]
         if m > 16:
             candidates += [
                 cfg(1, 4, 4, 2, 1),
                 cfg(1, 8, 4, 2, 1),
             ]
+        candidates += [
+            cfg(1, 4, 4, 1, 2, waves_per_eu=2),
+            cfg(1, 4, 4, 1, 2, waves_per_eu=4),
+            cfg(1, 4, 4, 1, 2, kernarg_preload=True),
+            cfg(1, 4, 4, 1, 2, sched_strategy="max-ilp"),
+        ]
     elif m <= 256:
         candidates += [
             cfg(1, 4, 4, 2, 1),
@@ -415,7 +423,9 @@ def _flydsl_candidates(m: int) -> list[dict]:
             cfg(4, 4, 4, 2, 1),
             cfg(3, 6, 4, 2, 1),
             cfg(2, 8, 2, 2, 1),
-            cfg(2, 8, 4, 2, 1, cluster_n=2),
+            cfg(2, 8, 4, 2, 1, waves_per_eu=2),
+            cfg(2, 8, 4, 2, 1, kernarg_preload=True),
+            cfg(2, 8, 4, 2, 1, sched_strategy="max-ilp"),
         ]
     else:
         candidates += [
@@ -428,7 +438,25 @@ def _flydsl_candidates(m: int) -> list[dict]:
             cfg(4, 8, 2, 2, 1),
             cfg(4, 8, 4, 2, 1, overlap="sync"),
             cfg(4, 8, 4, 2, 1, swizzle=64),
+            cfg(4, 8, 4, 2, 1, waves_per_eu=1),
+            cfg(4, 8, 4, 2, 1, waves_per_eu=2),
+            cfg(4, 8, 4, 2, 1, kernarg_preload=True),
+            cfg(4, 8, 4, 2, 1, sched_strategy="max-ilp"),
+            cfg(4, 8, 4, 2, 1, sched_strategy="max-memory-clause"),
         ]
+    if k >= 1024:
+        if m <= 32:
+            candidates.append(
+                cfg(1, 4, 4, 1, 2, main_loop_unroll=True)
+            )
+        elif m <= 256:
+            candidates.append(
+                cfg(2, 8, 4, 2, 1, main_loop_unroll=True)
+            )
+        else:
+            candidates.append(
+                cfg(4, 8, 4, 2, 1, main_loop_unroll=True)
+            )
     return candidates
 
 
@@ -455,11 +483,12 @@ class PreparedFlyDSL:
                 "waves_m": waves_m,
                 "waves_n": waves_n,
                 "num_stages": module.DEFAULT_PIPELINE_STAGES,
-                "traversal_order": "KMN",
                 "overlap_mode": "cross",
                 "swizzle_m": 32,
-                "cluster_m": 1,
-                "cluster_n": 1,
+                "waves_per_eu": None,
+                "kernarg_preload": False,
+                "sched_strategy": None,
+                "main_loop_unroll": False,
             }
         else:
             config = dict(config)
@@ -469,21 +498,21 @@ class PreparedFlyDSL:
             waves_m = config["waves_m"]
             waves_n = config["waves_n"]
         self.config = config
-        block_m = module.WMMA_M * reg_m * waves_m
         block_n = module.WMMA_N * reg_n * waves_n
         block_k = module.WMMA_K * reg_k
-        pm = module._round_up(m, block_m * config["cluster_m"])
-        pn = module._round_up(n, block_n * config["cluster_n"])
         pk = max(module._round_up(k, block_k), 2 * block_k)
-        self.a = torch.zeros((pm, pk), dtype=a.dtype, device=a.device)
-        self.b = torch.zeros((pn, pk), dtype=b.dtype, device=b.device)
-        self.c = torch.empty((pm, pn), dtype=torch.bfloat16, device=a.device)
-        self.a[:m, :k].copy_(a)
-        self.b[:n, :k].copy_(b)
-        self.view = self.c[:m, :n]
+        self.a, self.lda = module._prepare_matrix_layout(a, pk)
+        self.b, self.ldb = module._prepare_matrix_layout(b, pk)
+        self.ldc = module._round_up(n, block_n)
+        self.c = torch.empty(
+            (m, self.ldc),
+            dtype=torch.bfloat16,
+            device=a.device,
+        )
+        self.m = m
+        self.n = n
+        self.view = self.c[:, :n]
         self.launch, _, _, _ = module._cached_module(
-            pm,
-            pn,
             pk,
             "bf16",
             "bf16",
@@ -493,14 +522,12 @@ class PreparedFlyDSL:
             waves_m,
             waves_n,
             config["num_stages"],
-            config["traversal_order"],
             config["overlap_mode"],
             config["swizzle_m"],
-            True,
-            False,
-            config["cluster_m"],
-            config["cluster_n"],
-            False,
+            config["waves_per_eu"],
+            config["kernarg_preload"],
+            config["sched_strategy"],
+            config["main_loop_unroll"],
         )
 
     def __call__(self):
@@ -509,6 +536,11 @@ class PreparedFlyDSL:
             self.c,
             self.a,
             self.b,
+            self.m,
+            self.n,
+            self.lda,
+            self.ldb,
+            self.ldc,
             torch.cuda.current_stream(),
             device_index=self.a.device.index or 0,
         )
@@ -740,7 +772,7 @@ def main() -> None:
             opus_result = {"status": "failed", "error": str(exc)}
 
         best_flydsl = None
-        for flydsl_config in _flydsl_candidates(m):
+        for flydsl_config in _flydsl_candidates(m, k):
             try:
                 prepared = PreparedFlyDSL(
                     local_flydsl,

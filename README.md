@@ -42,13 +42,13 @@ for gfx1250:
 - TDM global-to-LDS loads with a configurable circular LDS pipeline
 - Per-slot DATA/FREE_A/FREE_B named barriers
 - 128-bit layout-driven LDS-to-register copies
-- Grouped-M tile swizzle and optional cluster multicast
+- Grouped-M tile swizzle with the measured 32/64 settings
+- Runtime M/N boundary handling without whole-matrix tile padding
+- `sync` and cross-stage LDS/WMMA overlap schedules
+- Optional waves-per-EU, kernarg preload, LLVM scheduling, and loop unroll
 - Cached `flyc.compile()` fast dispatch for repeated calls
 - FP16, BF16, or FP32 output
-- Optional preallocated output plus automatic padding/non-contiguous handling
-
-`kernels/gemm_a16w16_gfx1250_all_compute.py` contains the experimental
-four/eight-wave all-compute pipeline used for scheduler and TDM studies.
+- Optional preallocated output plus K-padding/non-contiguous handling
 
 ```python
 import torch

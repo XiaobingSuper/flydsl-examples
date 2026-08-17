@@ -1,0 +1,50 @@
+{
+  "gpu": "physical GPU3 / gfx1250 / 256 CUs",
+  "config_file": "/home/xiaobizh/aiter/aiter/configs/model_configs/dsv4_a8w8_blockscale_bpreshuffle_tuned_gemm.csv",
+  "kernel": "flydsl_mxfp8_128_bpreshuffle_wmma_t256x256x128_mw2_nw2_nb4_sk1_cm1_cn1",
+  "timing": {
+    "method": "aiter.test_common.run_perftest",
+    "num_iters": 20,
+    "num_warmup": 5,
+    "num_rotate_args": 1,
+    "metric": "profiler self_device_time, matching the tuned CSV"
+  },
+  "results": [
+    {
+      "M": 8192,
+      "N": 6144,
+      "K": 7168,
+      "csv_us": 130.2744,
+      "measured_us": 118.36126315789474,
+      "latency_delta_percent": -9.144649172903707,
+      "csv_tflops": 5538.73,
+      "measured_tflops": 6096.204843348464
+    },
+    {
+      "M": 16384,
+      "N": 7168,
+      "K": 4096,
+      "csv_us": 172.8295,
+      "measured_us": 169.9533157894737,
+      "latency_delta_percent": -1.6641743513267748,
+      "csv_tflops": 5566.6,
+      "measured_tflops": 5660.805556131359
+    },
+    {
+      "M": 32768,
+      "N": 7168,
+      "K": 4096,
+      "csv_us": 340.6371,
+      "measured_us": 382.19800000000004,
+      "latency_delta_percent": 12.200931724700581,
+      "csv_tflops": 5648.67,
+      "measured_tflops": 5034.42024450154
+    }
+  ],
+  "geomean_latency_ratio_measured_over_csv": 1.0008,
+  "notes": [
+    "The tuned configuration was selected from the requested CSV for every shape.",
+    "Single-call CUDA-event timing includes Python/JIT dispatch idle time and is not comparable with the CSV metric.",
+    "The largest shape retested at roughly 388-396 us, indicating a persistent 14-16% gap for that shape."
+  ]
+}

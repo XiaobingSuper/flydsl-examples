@@ -1,0 +1,1002 @@
+{
+  "suite": "dsv4",
+  "tuned_config": "/home/xiaobizh/aiter/aiter/configs/model_configs/dsv4_bf16_tuned_gemm.csv",
+  "environment": {
+    "docker_image": "rocm/fw-bringup:gfx1250-atom-dev-20260729",
+    "python": "3.12.3 (main, Jun 19 2026, 12:46:00) [GCC 13.3.0]",
+    "torch": "2.11.0+rocm7.15.0a20260712",
+    "torch_hip": "7.15.0",
+    "triton": "3.8.0",
+    "flydsl_package": "0.2.4",
+    "flydsl_module": "/usr/local/lib/python3.12/dist-packages/flydsl/__init__.py",
+    "aiter_module": "/home/xiaobizh/aiter/aiter/__init__.py",
+    "aiter_git": {
+      "commit": "0f144e5e4449a8b0a125715997c2386cc190f6f6",
+      "branch": "pr-4246",
+      "status": ""
+    },
+    "flydsl_examples_git": {
+      "commit": "d646bd87afbbd7f2ebd9c0f69dd4de0100128b35",
+      "branch": "xiaobing/455_gemm",
+      "status": "M DSV4_GFX1250_GEMM_TUNED_BACKEND_BENCHMARK.md\n?? 455_perf_set.sh\n?? HIPKITTENS_GFX1250_GEMM_BENCHMARK.md\n?? benchmark_flydsl_pr875_dsv4.py\n?? benchmark_hipkittens_gfx1250.sh\n?? dsv4_flydsl_pr875_results.json\n?? hipkittens_gfx1250_benchmark_results_20260814.json"
+    },
+    "gpu_name": "AMD Radeon Graphics",
+    "gpu_properties": "_CudaDeviceProperties(name='AMD Radeon Graphics', major=12, minor=5, gcnArchName='gfx1250', total_memory=442368MB, multi_processor_count=256, uuid=39353939-6661-3565-6631-336535643662, pci_bus_id=1, pci_device_id=0, pci_domain_id=4, L2_cache_size=4MB)",
+    "rocr_visible_devices": "3"
+  },
+  "settings": {
+    "warmup": 20,
+    "iterations": 50,
+    "tune_warmup": 3,
+    "tune_iterations": 8,
+    "batch_repeats": 10,
+    "tune_batch_repeats": 3,
+    "timing": "kernel_us = median sum of torch.profiler GPU kernel durations per call; e2e_us = median batched HIP-event elapsed time",
+    "dtype": "bf16 inputs, fp32 accumulation, bf16 output",
+    "bias": false
+  },
+  "derived_metrics": {
+    "flops": "2*M*N*K",
+    "estimated_bytes_moved": "2*(M*K + N*K + M*N)",
+    "tflops": "flops / time_us / 1e6",
+    "effective_bandwidth_gbps": "estimated_bytes_moved / time_us / 1e3",
+    "bandwidth_note": "Algorithmic lower-bound effective bandwidth, not measured HBM traffic; excludes cache and split-K workspace effects."
+  },
+  "results": [
+    {
+      "name": "decode_projection",
+      "category": "memory/launch-bound",
+      "M": 1,
+      "N": 1024,
+      "K": 4096,
+      "reason": "single-token DSv4 projection; tuned Opus winner",
+      "arithmetic_intensity_flop_per_byte": 0.9987807851743478,
+      "estimated_bytes_moved": 8398848.0,
+      "csv_selected_backend": "opus",
+      "csv_us": 4.6851,
+      "backends": {
+        "aiter_triton": {
+          "status": "ok",
+          "kernel_us": 13.138499999999908,
+          "e2e_us": 37.54415065050125,
+          "e2e_min_us": 36.68690025806427,
+          "e2e_max_us": 40.77700078487396,
+          "kernels_per_call": 1,
+          "tflops": 0.6384753206226021,
+          "e2e_tflops": 0.2234331541573442,
+          "effective_bandwidth_gbps": 639.2547094417215,
+          "e2e_effective_bandwidth_gbps": 223.70589970685265,
+          "config": {
+            "BLOCK_SIZE_M": 32,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 128,
+            "GROUP_SIZE_M": 1,
+            "num_warps": 4,
+            "num_stages": 3,
+            "waves_per_eu": 4,
+            "matrix_instr_nonkdim": 16,
+            "cache_modifier": ".cg",
+            "NUM_KSPLIT": 1,
+            "SPLITK_BLOCK_SIZE": 4096
+          },
+          "error": {
+            "max_abs": 0.0,
+            "rel_l2": 0.0,
+            "max_ref": 243.0,
+            "passed": true
+          }
+        },
+        "aiter_gluon": {
+          "status": "ok",
+          "kernel_us": 5.48700000000008,
+          "e2e_us": 89.73424732685089,
+          "e2e_min_us": 88.3762001991272,
+          "e2e_max_us": 99.6209979057312,
+          "kernels_per_call": 1,
+          "tflops": 1.5288150173136281,
+          "e2e_tflops": 0.09348279224369115,
+          "effective_bandwidth_gbps": 1530.6812465828098,
+          "e2e_effective_bandwidth_gbps": 93.59690698031675,
+          "error": {
+            "max_abs": 0.0,
+            "rel_l2": 0.0,
+            "max_ref": 243.0,
+            "passed": true
+          }
+        },
+        "aiter_opus_pr4246": {
+          "status": "ok",
+          "kernel_us": 4.825000000000031,
+          "e2e_us": 32.41250067949295,
+          "e2e_min_us": 31.6754013299942,
+          "e2e_max_us": 54.781901836395264,
+          "kernels_per_call": 2,
+          "tflops": 1.7385716062176053,
+          "e2e_tflops": 0.2588078002049186,
+          "effective_bandwidth_gbps": 1740.6938860103514,
+          "e2e_effective_bandwidth_gbps": 259.12372769540315,
+          "mode": "csv-explicit",
+          "kernelId": 20237,
+          "splitK": 13,
+          "error": {
+            "max_abs": 1.0,
+            "rel_l2": 0.0026413763407617807,
+            "max_ref": 243.0,
+            "passed": true
+          }
+        },
+        "local_flydsl": {
+          "status": "ok",
+          "kernel_us": 9.65300000000002,
+          "e2e_us": 10.437599942088127,
+          "e2e_min_us": 10.255400091409683,
+          "e2e_max_us": 11.413099616765976,
+          "kernels_per_call": 1,
+          "tflops": 0.8690156428053437,
+          "e2e_tflops": 0.8036912744829526,
+          "effective_bandwidth_gbps": 870.0764529161901,
+          "e2e_effective_bandwidth_gbps": 804.6723429332493,
+          "timing_scope": "kernel-only; input/output padding outside timing",
+          "config": {
+            "reg_m": 1,
+            "reg_n": 1,
+            "reg_k": 4,
+            "waves_m": 1,
+            "waves_n": 2,
+            "num_stages": 3,
+            "overlap_mode": "cross",
+            "swizzle_m": 32,
+            "waves_per_eu": null,
+            "kernarg_preload": false,
+            "sched_strategy": null,
+            "main_loop_unroll": false
+          },
+          "error": {
+            "max_abs": 0.0,
+            "rel_l2": 0.0,
+            "max_ref": 243.0,
+            "passed": true
+          }
+        }
+      }
+    },
+    {
+      "name": "decode_skinny_n",
+      "category": "memory/launch-bound",
+      "M": 32,
+      "N": 64,
+      "K": 7168,
+      "reason": "very skinny N projection with large K",
+      "arithmetic_intensity_flop_per_byte": 21.270029673590503,
+      "estimated_bytes_moved": 1380352.0,
+      "csv_selected_backend": "opus",
+      "csv_us": 4.6459,
+      "backends": {
+        "aiter_triton": {
+          "status": "ok",
+          "kernel_us": 20.809999999999945,
+          "e2e_us": 37.774550914764404,
+          "e2e_min_us": 37.09149956703186,
+          "e2e_max_us": 41.59420132637024,
+          "kernels_per_call": 1,
+          "tflops": 1.4108663142719884,
+          "e2e_tflops": 0.7772462488369233,
+          "effective_bandwidth_gbps": 66.33118692936107,
+          "e2e_effective_bandwidth_gbps": 36.54185070564218,
+          "config": {
+            "BLOCK_SIZE_M": 32,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 128,
+            "GROUP_SIZE_M": 1,
+            "num_warps": 4,
+            "num_stages": 3,
+            "waves_per_eu": 4,
+            "matrix_instr_nonkdim": 16,
+            "cache_modifier": ".cg",
+            "NUM_KSPLIT": 1,
+            "SPLITK_BLOCK_SIZE": 7168
+          },
+          "error": {
+            "max_abs": 0.03125,
+            "rel_l2": 8.164757673512213e-06,
+            "max_ref": 320.0,
+            "passed": true
+          }
+        },
+        "aiter_gluon": {
+          "status": "ok",
+          "kernel_us": 17.625,
+          "e2e_us": 86.51140034198761,
+          "e2e_min_us": 84.73079800605774,
+          "e2e_max_us": 98.69970083236694,
+          "kernels_per_call": 1,
+          "tflops": 1.665822865248227,
+          "e2e_tflops": 0.3393787163765317,
+          "effective_bandwidth_gbps": 78.3178439716312,
+          "e2e_effective_bandwidth_gbps": 15.95572369125156,
+          "error": {
+            "max_abs": 0.03125,
+            "rel_l2": 8.164757673512213e-06,
+            "max_ref": 320.0,
+            "passed": true
+          }
+        },
+        "aiter_opus_pr4246": {
+          "status": "ok",
+          "kernel_us": 5.125000000000028,
+          "e2e_us": 32.66884982585907,
+          "e2e_min_us": 31.691399216651917,
+          "e2e_max_us": 48.813000321388245,
+          "kernels_per_call": 2,
+          "tflops": 5.728805463414602,
+          "e2e_tflops": 0.8987193658945395,
+          "effective_bandwidth_gbps": 269.33697560975463,
+          "e2e_effective_bandwidth_gbps": 42.25284965212887,
+          "mode": "csv-explicit",
+          "kernelId": 20001,
+          "splitK": 12,
+          "error": {
+            "max_abs": 2.0,
+            "rel_l2": 0.0025807181373238564,
+            "max_ref": 320.0,
+            "passed": true
+          }
+        },
+        "local_flydsl": {
+          "status": "ok",
+          "kernel_us": 15.382000000000005,
+          "e2e_us": 16.212250292301178,
+          "e2e_min_us": 15.847699344158173,
+          "e2e_max_us": 17.82670021057129,
+          "kernels_per_call": 1,
+          "tflops": 1.9087328045767773,
+          "e2e_tflops": 1.8109841305585102,
+          "effective_bandwidth_gbps": 89.7381354830321,
+          "e2e_effective_bandwidth_gbps": 85.14252957564423,
+          "timing_scope": "kernel-only; input/output padding outside timing",
+          "config": {
+            "reg_m": 1,
+            "reg_n": 1,
+            "reg_k": 4,
+            "waves_m": 1,
+            "waves_n": 2,
+            "num_stages": 3,
+            "overlap_mode": "cross",
+            "swizzle_m": 32,
+            "waves_per_eu": null,
+            "kernarg_preload": false,
+            "sched_strategy": null,
+            "main_loop_unroll": false
+          },
+          "error": {
+            "max_abs": 0.03125,
+            "rel_l2": 8.164757673512213e-06,
+            "max_ref": 320.0,
+            "passed": true
+          }
+        }
+      }
+    },
+    {
+      "name": "decode_wide_n",
+      "category": "memory-bound",
+      "M": 32,
+      "N": 32320,
+      "K": 7168,
+      "reason": "wide DSv4 projection; tuned config selects Triton",
+      "arithmetic_intensity_flop_per_byte": 31.82640653437316,
+      "estimated_bytes_moved": 465866752.0,
+      "csv_selected_backend": "triton",
+      "csv_us": 45.6578,
+      "backends": {
+        "aiter_triton": {
+          "status": "ok",
+          "kernel_us": 68.12599999999998,
+          "e2e_us": 69.59759891033173,
+          "e2e_min_us": 69.21859979629517,
+          "e2e_max_us": 74.09380078315735,
+          "kernels_per_call": 1,
+          "tflops": 217.63885506267806,
+          "e2e_tflops": 213.03701380708063,
+          "effective_bandwidth_gbps": 6838.310659660044,
+          "e2e_effective_bandwidth_gbps": 6693.718738777385,
+          "config": {
+            "BLOCK_SIZE_M": 32,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 128,
+            "GROUP_SIZE_M": 1,
+            "num_warps": 4,
+            "num_stages": 3,
+            "waves_per_eu": 4,
+            "matrix_instr_nonkdim": 16,
+            "cache_modifier": ".cg",
+            "NUM_KSPLIT": 1,
+            "SPLITK_BLOCK_SIZE": 7168
+          },
+          "error": {
+            "max_abs": 1.0,
+            "rel_l2": 6.727486470481381e-05,
+            "max_ref": 394.0,
+            "passed": true
+          }
+        },
+        "aiter_gluon": {
+          "status": "ok",
+          "kernel_us": 68.48649999999986,
+          "e2e_us": 88.43530118465424,
+          "e2e_min_us": 87.18140125274658,
+          "e2e_max_us": 95.82729935646057,
+          "kernels_per_call": 1,
+          "tflops": 216.49324523811305,
+          "e2e_tflops": 167.65776156561375,
+          "effective_bandwidth_gbps": 6802.315083994669,
+          "e2e_effective_bandwidth_gbps": 5267.882234349643,
+          "error": {
+            "max_abs": 1.0,
+            "rel_l2": 6.727486470481381e-05,
+            "max_ref": 394.0,
+            "passed": true
+          }
+        },
+        "aiter_opus_pr4246": {
+          "status": "ok",
+          "kernel_us": 443.7620000000006,
+          "e2e_us": 574.9481678009033,
+          "e2e_min_us": 547.7755069732666,
+          "e2e_max_us": 621.2655067443848,
+          "kernels_per_call": 2,
+          "tflops": 33.411749180867176,
+          "e2e_tflops": 25.788176170228862,
+          "effective_bandwidth_gbps": 1049.8121786002391,
+          "e2e_effective_bandwidth_gbps": 810.2760876373874,
+          "mode": "heuristic",
+          "kernelId": null,
+          "splitK": null,
+          "error": {
+            "max_abs": 1.0,
+            "rel_l2": 6.727486470481381e-05,
+            "max_ref": 394.0,
+            "passed": true
+          }
+        },
+        "local_flydsl": {
+          "status": "ok",
+          "kernel_us": 69.02699999999996,
+          "e2e_us": 71.00124955177307,
+          "e2e_min_us": 70.51050066947937,
+          "e2e_max_us": 71.92559838294983,
+          "kernels_per_call": 1,
+          "tflops": 214.79804482304039,
+          "e2e_tflops": 208.82540425135008,
+          "effective_bandwidth_gbps": 6749.051124922136,
+          "e2e_effective_bandwidth_gbps": 6561.388073322523,
+          "timing_scope": "kernel-only; input/output padding outside timing",
+          "config": {
+            "reg_m": 1,
+            "reg_n": 8,
+            "reg_k": 4,
+            "waves_m": 2,
+            "waves_n": 1,
+            "num_stages": 3,
+            "overlap_mode": "cross",
+            "swizzle_m": 32,
+            "waves_per_eu": null,
+            "kernarg_preload": false,
+            "sched_strategy": null,
+            "main_loop_unroll": false
+          },
+          "error": {
+            "max_abs": 1.0,
+            "rel_l2": 6.727486470481381e-05,
+            "max_ref": 394.0,
+            "passed": true
+          }
+        }
+      }
+    },
+    {
+      "name": "prefill_opus",
+      "category": "mixed",
+      "M": 128,
+      "N": 2048,
+      "K": 4096,
+      "reason": "small prefill projection; tuned Opus cluster split-K",
+      "arithmetic_intensity_flop_per_byte": 117.02857142857142,
+      "estimated_bytes_moved": 18350080.0,
+      "csv_selected_backend": "opus",
+      "csv_us": 8.6068,
+      "backends": {
+        "aiter_triton": {
+          "status": "ok",
+          "kernel_us": 14.300500000000014,
+          "e2e_us": 37.85664886236191,
+          "e2e_min_us": 37.279701232910156,
+          "e2e_max_us": 41.954800486564636,
+          "kernels_per_call": 1,
+          "tflops": 150.16843103387978,
+          "e2e_tflops": 56.72672337712083,
+          "effective_bandwidth_gbps": 1283.1775112758282,
+          "e2e_effective_bandwidth_gbps": 484.7254194822337,
+          "config": {
+            "BLOCK_SIZE_M": 32,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 128,
+            "GROUP_SIZE_M": 1,
+            "num_warps": 4,
+            "num_stages": 3,
+            "waves_per_eu": 4,
+            "matrix_instr_nonkdim": 16,
+            "cache_modifier": ".cg",
+            "NUM_KSPLIT": 1,
+            "SPLITK_BLOCK_SIZE": 4096
+          },
+          "error": {
+            "max_abs": 1.0,
+            "rel_l2": 5.2665633120341226e-05,
+            "max_ref": 292.0,
+            "passed": true
+          }
+        },
+        "aiter_gluon": {
+          "status": "ok",
+          "kernel_us": 15.963000000000193,
+          "e2e_us": 92.935049533844,
+          "e2e_min_us": 90.68759679794312,
+          "e2e_max_us": 590.2589797973633,
+          "kernels_per_call": 1,
+          "tflops": 134.52882590991507,
+          "e2e_tflops": 23.107360019407473,
+          "effective_bandwidth_gbps": 1149.5383073357,
+          "e2e_effective_bandwidth_gbps": 197.45058610333535,
+          "error": {
+            "max_abs": 1.0,
+            "rel_l2": 5.2665633120341226e-05,
+            "max_ref": 292.0,
+            "passed": true
+          }
+        },
+        "aiter_opus_pr4246": {
+          "status": "ok",
+          "kernel_us": 11.475499999999954,
+          "e2e_us": 33.594249188899994,
+          "e2e_min_us": 32.2162002325058,
+          "e2e_max_us": 48.14009964466095,
+          "kernels_per_call": 2,
+          "tflops": 187.13639039693334,
+          "e2e_tflops": 63.92414475241669,
+          "effective_bandwidth_gbps": 1599.0658359112956,
+          "e2e_effective_bandwidth_gbps": 546.2268228355917,
+          "mode": "csv-explicit",
+          "kernelId": 20292,
+          "splitK": 3,
+          "error": {
+            "max_abs": 1.0,
+            "rel_l2": 0.0027178009040653706,
+            "max_ref": 292.0,
+            "passed": true
+          }
+        },
+        "local_flydsl": {
+          "status": "ok",
+          "kernel_us": 13.018000000000029,
+          "e2e_us": 14.121200144290924,
+          "e2e_min_us": 13.692399859428406,
+          "e2e_max_us": 15.082499384880066,
+          "kernels_per_call": 1,
+          "tflops": 164.96264003687165,
+          "e2e_tflops": 152.07515126596437,
+          "effective_bandwidth_gbps": 1409.5928714088154,
+          "e2e_effective_bandwidth_gbps": 1299.4702866964728,
+          "timing_scope": "kernel-only; input/output padding outside timing",
+          "config": {
+            "reg_m": 1,
+            "reg_n": 4,
+            "reg_k": 4,
+            "waves_m": 2,
+            "waves_n": 1,
+            "num_stages": 3,
+            "overlap_mode": "cross",
+            "swizzle_m": 32,
+            "waves_per_eu": null,
+            "kernarg_preload": false,
+            "sched_strategy": null,
+            "main_loop_unroll": false
+          },
+          "error": {
+            "max_abs": 1.0,
+            "rel_l2": 5.2665633120341226e-05,
+            "max_ref": 292.0,
+            "passed": true
+          }
+        }
+      }
+    },
+    {
+      "name": "transition_opus",
+      "category": "mixed",
+      "M": 512,
+      "N": 2048,
+      "K": 7168,
+      "reason": "mid-M transition still selected as Opus",
+      "arithmetic_intensity_flop_per_byte": 387.4594594594595,
+      "estimated_bytes_moved": 38797312.0,
+      "csv_selected_backend": "opus",
+      "csv_us": 20.227,
+      "backends": {
+        "aiter_triton": {
+          "status": "ok",
+          "kernel_us": 42.38249999999999,
+          "e2e_us": 43.957801163196564,
+          "e2e_min_us": 43.31279993057251,
+          "e2e_max_us": 49.193599820137024,
+          "kernels_per_call": 1,
+          "tflops": 354.6837854303074,
+          "e2e_tflops": 341.9731000691132,
+          "effective_bandwidth_gbps": 915.408765410252,
+          "e2e_effective_bandwidth_gbps": 882.6035646315004,
+          "config": {
+            "BLOCK_SIZE_M": 64,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 64,
+            "GROUP_SIZE_M": 8,
+            "num_warps": 4,
+            "num_stages": 3,
+            "waves_per_eu": 2,
+            "matrix_instr_nonkdim": 16,
+            "cache_modifier": null,
+            "NUM_KSPLIT": 1,
+            "SPLITK_BLOCK_SIZE": 7168
+          },
+          "error": {
+            "max_abs": 1.0,
+            "rel_l2": 5.9821388276759535e-05,
+            "max_ref": 438.0,
+            "passed": true
+          }
+        },
+        "aiter_gluon": {
+          "status": "ok",
+          "kernel_us": 49.893499999999904,
+          "e2e_us": 88.43624889850616,
+          "e2e_min_us": 87.50900030136108,
+          "e2e_max_us": 93.31459999084473,
+          "kernels_per_call": 1,
+          "tflops": 301.2894572639728,
+          "e2e_tflops": 169.97990895398462,
+          "effective_bandwidth_gbps": 777.6025333961353,
+          "e2e_effective_bandwidth_gbps": 438.70372707152836,
+          "error": {
+            "max_abs": 1.0,
+            "rel_l2": 5.9821388276759535e-05,
+            "max_ref": 438.0,
+            "passed": true
+          }
+        },
+        "aiter_opus_pr4246": {
+          "status": "ok",
+          "kernel_us": 49.26149999999987,
+          "e2e_us": 49.623750150203705,
+          "e2e_min_us": 41.675299406051636,
+          "e2e_max_us": 53.49609851837158,
+          "kernels_per_call": 2,
+          "tflops": 305.1548478223367,
+          "e2e_tflops": 302.9272372704442,
+          "effective_bandwidth_gbps": 787.5787785593233,
+          "e2e_effective_bandwidth_gbps": 781.8295046739981,
+          "mode": "csv-explicit",
+          "kernelId": 20420,
+          "splitK": 1,
+          "error": {
+            "max_abs": 1.0,
+            "rel_l2": 5.9821388276759535e-05,
+            "max_ref": 438.0,
+            "passed": true
+          }
+        },
+        "local_flydsl": {
+          "status": "ok",
+          "kernel_us": 31.786500000000046,
+          "e2e_us": 33.185648918151855,
+          "e2e_min_us": 32.59679973125458,
+          "e2e_max_us": 33.99089872837067,
+          "kernels_per_call": 1,
+          "tflops": 472.91729306466516,
+          "e2e_tflops": 452.9785020348841,
+          "effective_bandwidth_gbps": 1220.5594198795068,
+          "e2e_effective_bandwidth_gbps": 1169.0990914683812,
+          "timing_scope": "kernel-only; input/output padding outside timing",
+          "config": {
+            "reg_m": 4,
+            "reg_n": 4,
+            "reg_k": 4,
+            "waves_m": 2,
+            "waves_n": 1,
+            "num_stages": 3,
+            "overlap_mode": "cross",
+            "swizzle_m": 32,
+            "waves_per_eu": null,
+            "kernarg_preload": false,
+            "sched_strategy": null,
+            "main_loop_unroll": false
+          },
+          "error": {
+            "max_abs": 1.0,
+            "rel_l2": 5.9821388276759535e-05,
+            "max_ref": 438.0,
+            "passed": true
+          }
+        }
+      }
+    },
+    {
+      "name": "compute_opus",
+      "category": "compute-bound",
+      "M": 2048,
+      "N": 1024,
+      "K": 7168,
+      "reason": "compute-heavy shape whose tuned winner remains Opus",
+      "arithmetic_intensity_flop_per_byte": 623.304347826087,
+      "estimated_bytes_moved": 48234496.0,
+      "csv_selected_backend": "opus",
+      "csv_us": 31.4179,
+      "backends": {
+        "aiter_triton": {
+          "status": "ok",
+          "kernel_us": 51.65599999999995,
+          "e2e_us": 53.83855104446411,
+          "e2e_min_us": 52.89909839630127,
+          "e2e_max_us": 58.23509693145752,
+          "kernels_per_call": 1,
+          "tflops": 582.0189536936664,
+          "e2e_tflops": 558.4245951784651,
+          "effective_bandwidth_gbps": 933.7636673377739,
+          "e2e_effective_bandwidth_gbps": 895.9099950547361,
+          "config": {
+            "BLOCK_SIZE_M": 64,
+            "BLOCK_SIZE_N": 256,
+            "BLOCK_SIZE_K": 64,
+            "GROUP_SIZE_M": 8,
+            "num_warps": 8,
+            "num_stages": 3,
+            "waves_per_eu": 2,
+            "matrix_instr_nonkdim": 16,
+            "cache_modifier": null,
+            "NUM_KSPLIT": 1,
+            "SPLITK_BLOCK_SIZE": 7168
+          },
+          "error": {
+            "max_abs": 1.0,
+            "rel_l2": 6.021561421221122e-05,
+            "max_ref": 446.0,
+            "passed": true
+          }
+        },
+        "aiter_gluon": {
+          "status": "ok",
+          "kernel_us": 93.20350000000008,
+          "e2e_us": 95.03419995307922,
+          "e2e_min_us": 86.38619780540466,
+          "e2e_max_us": 104.8738956451416,
+          "kernels_per_call": 1,
+          "tflops": 322.57126687302485,
+          "e2e_tflops": 316.3573859394169,
+          "effective_bandwidth_gbps": 517.5180760379166,
+          "e2e_effective_bandwidth_gbps": 507.5488195177587,
+          "error": {
+            "max_abs": 1.0,
+            "rel_l2": 6.021561421221122e-05,
+            "max_ref": 446.0,
+            "passed": true
+          }
+        },
+        "aiter_opus_pr4246": {
+          "status": "ok",
+          "kernel_us": 63.33799999999994,
+          "e2e_us": 64.3543004989624,
+          "e2e_min_us": 63.035398721694946,
+          "e2e_max_us": 67.70020127296448,
+          "kernels_per_call": 2,
+          "tflops": 474.6719358363073,
+          "e2e_tflops": 467.1757883917135,
+          "effective_bandwidth_gbps": 761.5411917016648,
+          "e2e_effective_bandwidth_gbps": 749.5147274699644,
+          "mode": "csv-explicit",
+          "kernelId": 20564,
+          "splitK": 2,
+          "error": {
+            "max_abs": 2.0,
+            "rel_l2": 0.0028611873276531696,
+            "max_ref": 446.0,
+            "passed": true
+          }
+        },
+        "local_flydsl": {
+          "status": "ok",
+          "kernel_us": 49.23250000000009,
+          "e2e_us": 50.583600997924805,
+          "e2e_min_us": 49.650201201438904,
+          "e2e_max_us": 51.669299602508545,
+          "kernels_per_call": 1,
+          "tflops": 610.6691935611628,
+          "e2e_tflops": 594.3580622746373,
+          "effective_bandwidth_gbps": 979.7287564109057,
+          "e2e_effective_bandwidth_gbps": 953.5599492408384,
+          "timing_scope": "kernel-only; input/output padding outside timing",
+          "config": {
+            "reg_m": 4,
+            "reg_n": 8,
+            "reg_k": 4,
+            "waves_m": 2,
+            "waves_n": 1,
+            "num_stages": 3,
+            "overlap_mode": "cross",
+            "swizzle_m": 32,
+            "waves_per_eu": null,
+            "kernarg_preload": false,
+            "sched_strategy": null,
+            "main_loop_unroll": false
+          },
+          "error": {
+            "max_abs": 1.0,
+            "rel_l2": 6.021561421221122e-05,
+            "max_ref": 446.0,
+            "passed": true
+          }
+        }
+      }
+    },
+    {
+      "name": "compute_crossover",
+      "category": "compute-bound",
+      "M": 4096,
+      "N": 2048,
+      "K": 4096,
+      "reason": "large-M backend crossover; tuned config selects Triton",
+      "arithmetic_intensity_flop_per_byte": 1024.0,
+      "estimated_bytes_moved": 67108864.0,
+      "csv_selected_backend": "triton",
+      "csv_us": 61.7837,
+      "backends": {
+        "aiter_triton": {
+          "status": "ok",
+          "kernel_us": 108.24549999999988,
+          "e2e_us": 92.63205230236053,
+          "e2e_min_us": 86.46630048751831,
+          "e2e_max_us": 97.02019691467285,
+          "kernels_per_call": 1,
+          "tflops": 634.848346915115,
+          "e2e_tflops": 741.8541965549092,
+          "effective_bandwidth_gbps": 619.969088784292,
+          "e2e_effective_bandwidth_gbps": 724.4669888231535,
+          "config": {
+            "BLOCK_SIZE_M": 256,
+            "BLOCK_SIZE_N": 256,
+            "BLOCK_SIZE_K": 64,
+            "GROUP_SIZE_M": 8,
+            "num_warps": 8,
+            "num_stages": 2,
+            "waves_per_eu": 1,
+            "matrix_instr_nonkdim": 16,
+            "cache_modifier": null,
+            "NUM_KSPLIT": 1,
+            "SPLITK_BLOCK_SIZE": 4096
+          },
+          "error": {
+            "max_abs": 1.0,
+            "rel_l2": 5.1764898671535775e-05,
+            "max_ref": 332.0,
+            "passed": true
+          }
+        },
+        "aiter_gluon": {
+          "status": "ok",
+          "kernel_us": 119.51299999999992,
+          "e2e_us": 120.50929665565491,
+          "e2e_min_us": 114.88889455795288,
+          "e2e_max_us": 130.9628963470459,
+          "kernels_per_call": 1,
+          "tflops": 574.9958308803231,
+          "e2e_tflops": 570.242119430504,
+          "effective_bandwidth_gbps": 561.5193660940655,
+          "e2e_effective_bandwidth_gbps": 556.8770697563515,
+          "error": {
+            "max_abs": 1.0,
+            "rel_l2": 5.1764898671535775e-05,
+            "max_ref": 332.0,
+            "passed": true
+          }
+        },
+        "aiter_opus_pr4246": {
+          "status": "ok",
+          "kernel_us": 426.4860000000008,
+          "e2e_us": 528.9368629455566,
+          "e2e_min_us": 506.8652153015137,
+          "e2e_max_us": 549.4510173797607,
+          "kernels_per_call": 2,
+          "tflops": 161.12950187344924,
+          "e2e_tflops": 129.91999905870293,
+          "effective_bandwidth_gbps": 157.35302917329028,
+          "e2e_effective_bandwidth_gbps": 126.87499908076458,
+          "mode": "heuristic",
+          "kernelId": null,
+          "splitK": null,
+          "error": {
+            "max_abs": 1.0,
+            "rel_l2": 5.1764898671535775e-05,
+            "max_ref": 332.0,
+            "passed": true
+          }
+        },
+        "local_flydsl": {
+          "status": "ok",
+          "kernel_us": 84.68599999999992,
+          "e2e_us": 88.29714953899384,
+          "e2e_min_us": 86.08480095863342,
+          "e2e_max_us": 90.57959914207458,
+          "kernels_per_call": 1,
+          "tflops": 811.462068535532,
+          "e2e_tflops": 778.2751435894548,
+          "effective_bandwidth_gbps": 792.4434263042305,
+          "e2e_effective_bandwidth_gbps": 760.0343199115771,
+          "timing_scope": "kernel-only; input/output padding outside timing",
+          "config": {
+            "reg_m": 4,
+            "reg_n": 8,
+            "reg_k": 4,
+            "waves_m": 2,
+            "waves_n": 1,
+            "num_stages": 3,
+            "overlap_mode": "cross",
+            "swizzle_m": 32,
+            "waves_per_eu": null,
+            "kernarg_preload": false,
+            "sched_strategy": "max-memory-clause",
+            "main_loop_unroll": false
+          },
+          "error": {
+            "max_abs": 1.0,
+            "rel_l2": 5.1764898671535775e-05,
+            "max_ref": 332.0,
+            "passed": true
+          }
+        }
+      }
+    },
+    {
+      "name": "compute_large",
+      "category": "compute-bound",
+      "M": 16384,
+      "N": 2048,
+      "K": 4096,
+      "reason": "large DSv4 production GEMM",
+      "arithmetic_intensity_flop_per_byte": 1260.3076923076924,
+      "estimated_bytes_moved": 218103808.0,
+      "csv_selected_backend": "triton",
+      "csv_us": 209.0758,
+      "backends": {
+        "aiter_triton": {
+          "status": "ok",
+          "kernel_us": 335.34600000000023,
+          "e2e_us": 336.3121509552002,
+          "e2e_min_us": 335.3456974029541,
+          "e2e_max_us": 341.11030101776123,
+          "kernels_per_call": 1,
+          "tflops": 819.6844660261337,
+          "e2e_tflops": 817.3296925587925,
+          "effective_bandwidth_gbps": 650.3844029748375,
+          "e2e_effective_bandwidth_gbps": 648.5159914101747,
+          "config": {
+            "BLOCK_SIZE_M": 256,
+            "BLOCK_SIZE_N": 256,
+            "BLOCK_SIZE_K": 64,
+            "GROUP_SIZE_M": 8,
+            "num_warps": 8,
+            "num_stages": 3,
+            "waves_per_eu": 1,
+            "matrix_instr_nonkdim": 16,
+            "cache_modifier": null,
+            "NUM_KSPLIT": 1,
+            "SPLITK_BLOCK_SIZE": 4096
+          },
+          "error": {
+            "max_abs": 1.0,
+            "rel_l2": 5.3527866839431226e-05,
+            "max_ref": 352.0,
+            "passed": true
+          }
+        },
+        "aiter_gluon": {
+          "status": "incorrect",
+          "kernel_us": 482.12050000000045,
+          "e2e_us": 483.3271026611328,
+          "e2e_min_us": 482.25650787353516,
+          "e2e_max_us": 493.8407897949219,
+          "kernels_per_call": 1,
+          "tflops": 570.1435780971765,
+          "e2e_tflops": 568.7202423173869,
+          "effective_bandwidth_gbps": 452.3844308632381,
+          "e2e_effective_bandwidth_gbps": 451.25507508093443,
+          "error": {
+            "max_abs": 40.0625,
+            "rel_l2": 0.0019254268845543265,
+            "max_ref": 352.0,
+            "passed": false
+          }
+        },
+        "aiter_opus_pr4246": {
+          "status": "ok",
+          "kernel_us": 1532.159999999999,
+          "e2e_us": 1656.749439239502,
+          "e2e_min_us": 1549.0734100341797,
+          "e2e_max_us": 1833.232307434082,
+          "kernels_per_call": 2,
+          "tflops": 179.4054843776108,
+          "e2e_tflops": 165.9139882191101,
+          "effective_bandwidth_gbps": 142.35054302422733,
+          "e2e_effective_bandwidth_gbps": 131.6456205351826,
+          "mode": "heuristic",
+          "kernelId": null,
+          "splitK": null,
+          "error": {
+            "max_abs": 1.0,
+            "rel_l2": 5.3527866839431226e-05,
+            "max_ref": 352.0,
+            "passed": true
+          }
+        },
+        "local_flydsl": {
+          "status": "ok",
+          "kernel_us": 336.64300000000003,
+          "e2e_us": 338.82235288619995,
+          "e2e_min_us": 336.03971004486084,
+          "e2e_max_us": 341.5450096130371,
+          "kernels_per_call": 1,
+          "tflops": 816.5264299094292,
+          "e2e_tflops": 811.274417412251,
+          "effective_bandwidth_gbps": 647.878637013097,
+          "e2e_effective_bandwidth_gbps": 643.7113907689981,
+          "timing_scope": "kernel-only; input/output padding outside timing",
+          "config": {
+            "reg_m": 4,
+            "reg_n": 8,
+            "reg_k": 4,
+            "waves_m": 2,
+            "waves_n": 1,
+            "num_stages": 3,
+            "overlap_mode": "cross",
+            "swizzle_m": 32,
+            "waves_per_eu": null,
+            "kernarg_preload": false,
+            "sched_strategy": "max-memory-clause",
+            "main_loop_unroll": false
+          },
+          "error": {
+            "max_abs": 1.0,
+            "rel_l2": 5.3527866839431226e-05,
+            "max_ref": 352.0,
+            "passed": true
+          }
+        }
+      }
+    }
+  ],
+  "performance_settings": {
+    "applied": true,
+    "script": "/home/xiaobizh/flydsl-examples/455_perf_set.sh",
+    "script_sha256": "6416051685c67dc77a9a525b3b9abe8bdb93d93f673d25f7eefa61d15dce4671",
+    "applied_date": "2026-08-16",
+    "hsa_enable_sdma": "1",
+    "hsa_use_svm": "1",
+    "hsa_xnack": "1",
+    "numa_balancing": "0",
+    "scope": "machine-wide MI455 DRAM/TDC/link/KLL/MGCG settings"
+  },
+  "retest_merge": {
+    "source": "dsv4_gemm_perfset_compute_retest_20260816.json",
+    "replaced_shapes": [
+      "compute_crossover",
+      "compute_large"
+    ],
+    "reason": "dedicated retest after profiler anomaly and Gluon correctness failure"
+  }
+}

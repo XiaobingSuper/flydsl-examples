@@ -8,7 +8,10 @@ import flydsl  # noqa: F401 -- load COMGR before torch loads HIP LLVM
 import torch
 from torch.profiler import ProfilerActivity, profile
 
-from kernels.gemm_a16w16_gfx1250 import gemm_a16w16
+from kernels.gemm_a16w16_gfx1250 import (
+    _gemm_producer_consumer,
+    gemm_a16w16,
+)
 
 
 DEFAULT_SHAPES = ((2048, 2048, 2048), (4096, 4096, 4096), (8192, 8192, 8192))
@@ -41,20 +44,22 @@ def benchmark_shape(
     warmup: int,
     iterations: int,
     peak_pflops: float,
-    kernel_kwargs: dict,
+    kernel_kwargs: dict | None = None,
 ) -> dict:
     torch.manual_seed(0)
     a = torch.randn((m, k), device="cuda", dtype=dtype)
     b = torch.randn((n, k), device="cuda", dtype=dtype)
     out = torch.empty((m, n), device="cuda", dtype=dtype)
+    kernel_kwargs = kernel_kwargs or {}
+    kernel = _gemm_producer_consumer if kernel_kwargs else gemm_a16w16
 
     for _ in range(warmup):
-        gemm_a16w16(a, b, out=out, **kernel_kwargs)
+        kernel(a, b, out=out, **kernel_kwargs)
     torch.cuda.synchronize()
 
     with profile(activities=[ProfilerActivity.CUDA]) as prof:
         for _ in range(iterations):
-            gemm_a16w16(a, b, out=out, **kernel_kwargs)
+            kernel(a, b, out=out, **kernel_kwargs)
         torch.cuda.synchronize()
 
     times_us = _device_kernel_times_us(prof)

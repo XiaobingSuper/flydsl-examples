@@ -1,0 +1,834 @@
+{
+  "gpu": "physical GPU3 / gfx1250",
+  "settings": {
+    "device": 0,
+    "warmup": 20,
+    "iterations": 50,
+    "tune_warmup": 3,
+    "tune_iterations": 8,
+    "batch_repeats": 10,
+    "tune_batch_repeats": 3,
+    "correctness_repeats": 5,
+    "output": "a16w16_hybrid_gfx1250_results_20260816.json"
+  },
+  "results": [
+    {
+      "name": "compute_opus",
+      "M": 2048,
+      "N": 1024,
+      "K": 7168,
+      "local": {
+        "status": "ok",
+        "kernel_us": 48.912499999999966,
+        "e2e_us": 50.407448410987854,
+        "e2e_min_us": 49.466100335121155,
+        "e2e_max_us": 52.574700117111206,
+        "kernels_per_call": 1,
+        "tflops": 614.6643715205729,
+        "e2e_tflops": 596.4350908396002,
+        "effective_bandwidth_gbps": 986.1384308714547,
+        "estimated_bytes_moved": 48234496.0,
+        "error": {
+          "max_abs": 1.0,
+          "rel_l2": 6.021561421221122e-05,
+          "max_ref": 446.0,
+          "passed": true
+        },
+        "config": {
+          "reg_m": 4,
+          "reg_n": 8,
+          "reg_k": 4,
+          "waves_m": 2,
+          "waves_n": 1,
+          "num_stages": 3,
+          "overlap_mode": "cross"
+        }
+      },
+      "hybrid": {
+        "status": "ok",
+        "kernel_us": 37.35450000000003,
+        "e2e_us": 40.52715003490448,
+        "e2e_min_us": 37.93669939041138,
+        "e2e_max_us": 43.587300181388855,
+        "kernels_per_call": 1,
+        "tflops": 804.8500467681264,
+        "e2e_tflops": 741.8427164532015,
+        "effective_bandwidth_gbps": 1291.2633283807832,
+        "estimated_bytes_moved": 48234496.0,
+        "error": {
+          "max_abs": 1.0,
+          "rel_l2": 6.021561421221122e-05,
+          "max_ref": 446.0,
+          "passed": true
+        },
+        "config": {
+          "reg_m": 2,
+          "reg_n": 4,
+          "reg_k": 4,
+          "waves_m": 4,
+          "waves_n": 2,
+          "num_buffers": 3,
+          "diagonal_traversal": false
+        }
+      },
+      "candidate_trials": [
+        {
+          "config": {
+            "reg_m": 4,
+            "reg_n": 4,
+            "reg_k": 2,
+            "waves_m": 2,
+            "waves_n": 2,
+            "num_buffers": 2,
+            "diagonal_traversal": false
+          },
+          "error": {
+            "max_abs": 1.0,
+            "rel_l2": 6.021561421221122e-05,
+            "max_ref": 446.0,
+            "passed": true
+          },
+          "tune_e2e_us": 68.59583407640457
+        },
+        {
+          "config": {
+            "reg_m": 4,
+            "reg_n": 4,
+            "reg_k": 2,
+            "waves_m": 2,
+            "waves_n": 2,
+            "num_buffers": 2,
+            "diagonal_traversal": true
+          },
+          "error": {
+            "max_abs": 1.0,
+            "rel_l2": 6.021561421221122e-05,
+            "max_ref": 446.0,
+            "passed": true
+          },
+          "tune_e2e_us": 78.23033134142557
+        },
+        {
+          "config": {
+            "reg_m": 4,
+            "reg_n": 4,
+            "reg_k": 4,
+            "waves_m": 2,
+            "waves_n": 2,
+            "num_buffers": 2,
+            "diagonal_traversal": false
+          },
+          "error": {
+            "max_abs": 1.0,
+            "rel_l2": 6.021561421221122e-05,
+            "max_ref": 446.0,
+            "passed": true
+          },
+          "tune_e2e_us": 53.25283358494441
+        },
+        {
+          "config": {
+            "reg_m": 4,
+            "reg_n": 4,
+            "reg_k": 4,
+            "waves_m": 2,
+            "waves_n": 2,
+            "num_buffers": 2,
+            "diagonal_traversal": true
+          },
+          "error": {
+            "max_abs": 1.0,
+            "rel_l2": 6.021561421221122e-05,
+            "max_ref": 446.0,
+            "passed": true
+          },
+          "tune_e2e_us": 57.98666675885518
+        },
+        {
+          "config": {
+            "reg_m": 4,
+            "reg_n": 4,
+            "reg_k": 4,
+            "waves_m": 2,
+            "waves_n": 2,
+            "num_buffers": 3,
+            "diagonal_traversal": false
+          },
+          "error": {
+            "max_abs": 1.0,
+            "rel_l2": 6.021561421221122e-05,
+            "max_ref": 446.0,
+            "passed": true
+          },
+          "tune_e2e_us": 47.31416702270508
+        },
+        {
+          "config": {
+            "reg_m": 4,
+            "reg_n": 4,
+            "reg_k": 4,
+            "waves_m": 2,
+            "waves_n": 2,
+            "num_buffers": 3,
+            "diagonal_traversal": true
+          },
+          "error": {
+            "max_abs": 1.0,
+            "rel_l2": 6.021561421221122e-05,
+            "max_ref": 446.0,
+            "passed": true
+          },
+          "tune_e2e_us": 46.10233257214229
+        },
+        {
+          "config": {
+            "reg_m": 4,
+            "reg_n": 2,
+            "reg_k": 4,
+            "waves_m": 2,
+            "waves_n": 4,
+            "num_buffers": 2,
+            "diagonal_traversal": false
+          },
+          "error": {
+            "max_abs": 1.0,
+            "rel_l2": 6.021561421221122e-05,
+            "max_ref": 446.0,
+            "passed": true
+          },
+          "tune_e2e_us": 51.15649849176407
+        },
+        {
+          "config": {
+            "reg_m": 4,
+            "reg_n": 2,
+            "reg_k": 4,
+            "waves_m": 2,
+            "waves_n": 4,
+            "num_buffers": 3,
+            "diagonal_traversal": false
+          },
+          "error": {
+            "max_abs": 1.0,
+            "rel_l2": 6.021561421221122e-05,
+            "max_ref": 446.0,
+            "passed": true
+          },
+          "tune_e2e_us": 46.16916676362356
+        },
+        {
+          "config": {
+            "reg_m": 2,
+            "reg_n": 4,
+            "reg_k": 4,
+            "waves_m": 4,
+            "waves_n": 2,
+            "num_buffers": 2,
+            "diagonal_traversal": false
+          },
+          "error": {
+            "max_abs": 1.0,
+            "rel_l2": 6.021561421221122e-05,
+            "max_ref": 446.0,
+            "passed": true
+          },
+          "tune_e2e_us": 52.15133229891459
+        },
+        {
+          "config": {
+            "reg_m": 2,
+            "reg_n": 4,
+            "reg_k": 4,
+            "waves_m": 4,
+            "waves_n": 2,
+            "num_buffers": 3,
+            "diagonal_traversal": false
+          },
+          "error": {
+            "max_abs": 1.0,
+            "rel_l2": 6.021561421221122e-05,
+            "max_ref": 446.0,
+            "passed": true
+          },
+          "tune_e2e_us": 46.09383394320806
+        }
+      ]
+    },
+    {
+      "name": "compute_crossover",
+      "M": 4096,
+      "N": 2048,
+      "K": 4096,
+      "local": {
+        "status": "ok",
+        "kernel_us": 84.98650000000004,
+        "e2e_us": 88.31320106983185,
+        "e2e_min_us": 86.85699701309204,
+        "e2e_max_us": 90.46239852905273,
+        "kernels_per_call": 1,
+        "tflops": 808.5928557594438,
+        "e2e_tflops": 778.133686736839,
+        "effective_bandwidth_gbps": 789.6414607025818,
+        "estimated_bytes_moved": 67108864.0,
+        "error": {
+          "max_abs": 1.0,
+          "rel_l2": 5.1764898671535775e-05,
+          "max_ref": 332.0,
+          "passed": true
+        },
+        "config": {
+          "reg_m": 4,
+          "reg_n": 8,
+          "reg_k": 4,
+          "waves_m": 2,
+          "waves_n": 1,
+          "num_stages": 3,
+          "overlap_mode": "cross",
+          "sched_strategy": "max-memory-clause"
+        }
+      },
+      "hybrid": {
+        "status": "ok",
+        "kernel_us": 91.43049999999994,
+        "e2e_us": 93.11585128307343,
+        "e2e_min_us": 92.63359904289246,
+        "e2e_max_us": 93.93460154533386,
+        "kernels_per_call": 1,
+        "tflops": 751.6034226653037,
+        "e2e_tflops": 737.999768987687,
+        "effective_bandwidth_gbps": 733.9877174465856,
+        "estimated_bytes_moved": 67108864.0,
+        "error": {
+          "max_abs": 1.0,
+          "rel_l2": 5.1764898671535775e-05,
+          "max_ref": 332.0,
+          "passed": true
+        },
+        "config": {
+          "reg_m": 4,
+          "reg_n": 4,
+          "reg_k": 4,
+          "waves_m": 2,
+          "waves_n": 2,
+          "num_buffers": 2,
+          "diagonal_traversal": true
+        }
+      },
+      "candidate_trials": [
+        {
+          "config": {
+            "reg_m": 4,
+            "reg_n": 4,
+            "reg_k": 2,
+            "waves_m": 2,
+            "waves_n": 2,
+            "num_buffers": 2,
+            "diagonal_traversal": false
+          },
+          "error": {
+            "max_abs": 1.0,
+            "rel_l2": 5.1764898671535775e-05,
+            "max_ref": 332.0,
+            "passed": true
+          },
+          "tune_e2e_us": 101.92249715328217
+        },
+        {
+          "config": {
+            "reg_m": 4,
+            "reg_n": 4,
+            "reg_k": 2,
+            "waves_m": 2,
+            "waves_n": 2,
+            "num_buffers": 2,
+            "diagonal_traversal": true
+          },
+          "error": {
+            "max_abs": 1.0,
+            "rel_l2": 5.1764898671535775e-05,
+            "max_ref": 332.0,
+            "passed": true
+          },
+          "tune_e2e_us": 113.59500388304392
+        },
+        {
+          "config": {
+            "reg_m": 4,
+            "reg_n": 4,
+            "reg_k": 4,
+            "waves_m": 2,
+            "waves_n": 2,
+            "num_buffers": 2,
+            "diagonal_traversal": false
+          },
+          "error": {
+            "max_abs": 1.0,
+            "rel_l2": 5.1764898671535775e-05,
+            "max_ref": 332.0,
+            "passed": true
+          },
+          "tune_e2e_us": 94.289501508077
+        },
+        {
+          "config": {
+            "reg_m": 4,
+            "reg_n": 4,
+            "reg_k": 4,
+            "waves_m": 2,
+            "waves_n": 2,
+            "num_buffers": 2,
+            "diagonal_traversal": true
+          },
+          "error": {
+            "max_abs": 1.0,
+            "rel_l2": 5.1764898671535775e-05,
+            "max_ref": 332.0,
+            "passed": true
+          },
+          "tune_e2e_us": 93.81049871444702
+        },
+        {
+          "config": {
+            "reg_m": 4,
+            "reg_n": 4,
+            "reg_k": 4,
+            "waves_m": 2,
+            "waves_n": 2,
+            "num_buffers": 3,
+            "diagonal_traversal": false
+          },
+          "error": {
+            "max_abs": 1.0,
+            "rel_l2": 5.1764898671535775e-05,
+            "max_ref": 332.0,
+            "passed": true
+          },
+          "tune_e2e_us": 101.88583036263785
+        },
+        {
+          "config": {
+            "reg_m": 4,
+            "reg_n": 4,
+            "reg_k": 4,
+            "waves_m": 2,
+            "waves_n": 2,
+            "num_buffers": 3,
+            "diagonal_traversal": true
+          },
+          "error": {
+            "max_abs": 1.0,
+            "rel_l2": 5.1764898671535775e-05,
+            "max_ref": 332.0,
+            "passed": true
+          },
+          "tune_e2e_us": 101.26983126004536
+        },
+        {
+          "config": {
+            "reg_m": 4,
+            "reg_n": 2,
+            "reg_k": 4,
+            "waves_m": 2,
+            "waves_n": 4,
+            "num_buffers": 2,
+            "diagonal_traversal": false
+          },
+          "error": {
+            "max_abs": 1.0,
+            "rel_l2": 5.1764898671535775e-05,
+            "max_ref": 332.0,
+            "passed": true
+          },
+          "tune_e2e_us": 94.43633258342743
+        },
+        {
+          "config": {
+            "reg_m": 4,
+            "reg_n": 2,
+            "reg_k": 4,
+            "waves_m": 2,
+            "waves_n": 4,
+            "num_buffers": 3,
+            "diagonal_traversal": false
+          },
+          "error": {
+            "max_abs": 1.0,
+            "rel_l2": 5.1764898671535775e-05,
+            "max_ref": 332.0,
+            "passed": true
+          },
+          "tune_e2e_us": 98.88633092244466
+        },
+        {
+          "config": {
+            "reg_m": 2,
+            "reg_n": 4,
+            "reg_k": 4,
+            "waves_m": 4,
+            "waves_n": 2,
+            "num_buffers": 2,
+            "diagonal_traversal": false
+          },
+          "error": {
+            "max_abs": 1.0,
+            "rel_l2": 5.1764898671535775e-05,
+            "max_ref": 332.0,
+            "passed": true
+          },
+          "tune_e2e_us": 94.68166530132294
+        },
+        {
+          "config": {
+            "reg_m": 2,
+            "reg_n": 4,
+            "reg_k": 4,
+            "waves_m": 4,
+            "waves_n": 2,
+            "num_buffers": 3,
+            "diagonal_traversal": false
+          },
+          "error": {
+            "max_abs": 1.0,
+            "rel_l2": 5.1764898671535775e-05,
+            "max_ref": 332.0,
+            "passed": true
+          },
+          "tune_e2e_us": 98.71116280555725
+        }
+      ]
+    },
+    {
+      "name": "compute_large",
+      "M": 16384,
+      "N": 2048,
+      "K": 4096,
+      "local": {
+        "status": "ok",
+        "kernel_us": 331.4150000000001,
+        "e2e_us": 334.6182942390442,
+        "e2e_min_us": 332.181191444397,
+        "e2e_max_us": 338.1450891494751,
+        "kernels_per_call": 1,
+        "tflops": 829.406957874568,
+        "e2e_tflops": 821.4670616533389,
+        "effective_bandwidth_gbps": 658.0987824932485,
+        "estimated_bytes_moved": 218103808.0,
+        "error": {
+          "max_abs": 1.0,
+          "rel_l2": 5.3527866839431226e-05,
+          "max_ref": 352.0,
+          "passed": true
+        },
+        "config": {
+          "reg_m": 4,
+          "reg_n": 8,
+          "reg_k": 4,
+          "waves_m": 2,
+          "waves_n": 1,
+          "num_stages": 3,
+          "overlap_mode": "cross",
+          "sched_strategy": "max-memory-clause"
+        }
+      },
+      "hybrid": {
+        "status": "ok",
+        "kernel_us": 337.50400000000025,
+        "e2e_us": 339.26624059677124,
+        "e2e_min_us": 336.8841886520386,
+        "e2e_max_us": 344.8491096496582,
+        "kernels_per_call": 1,
+        "tflops": 814.443404949274,
+        "e2e_tflops": 810.2129656652198,
+        "effective_bandwidth_gbps": 646.2258462121926,
+        "estimated_bytes_moved": 218103808.0,
+        "error": {
+          "max_abs": 1.0,
+          "rel_l2": 5.3527866839431226e-05,
+          "max_ref": 352.0,
+          "passed": true
+        },
+        "config": {
+          "reg_m": 4,
+          "reg_n": 4,
+          "reg_k": 2,
+          "waves_m": 2,
+          "waves_n": 2,
+          "num_buffers": 2,
+          "diagonal_traversal": false
+        }
+      },
+      "candidate_trials": [
+        {
+          "config": {
+            "reg_m": 4,
+            "reg_n": 4,
+            "reg_k": 2,
+            "waves_m": 2,
+            "waves_n": 2,
+            "num_buffers": 2,
+            "diagonal_traversal": false
+          },
+          "error": {
+            "max_abs": 1.0,
+            "rel_l2": 5.3527866839431226e-05,
+            "max_ref": 352.0,
+            "passed": true
+          },
+          "tune_e2e_us": 337.904175122579
+        },
+        {
+          "config": {
+            "reg_m": 4,
+            "reg_n": 4,
+            "reg_k": 2,
+            "waves_m": 2,
+            "waves_n": 2,
+            "num_buffers": 2,
+            "diagonal_traversal": true
+          },
+          "error": {
+            "max_abs": 1.0,
+            "rel_l2": 5.3527866839431226e-05,
+            "max_ref": 352.0,
+            "passed": true
+          },
+          "tune_e2e_us": 340.73682626088464
+        },
+        {
+          "config": {
+            "reg_m": 4,
+            "reg_n": 4,
+            "reg_k": 4,
+            "waves_m": 2,
+            "waves_n": 2,
+            "num_buffers": 2,
+            "diagonal_traversal": false
+          },
+          "error": {
+            "max_abs": 1.0,
+            "rel_l2": 5.3527866839431226e-05,
+            "max_ref": 352.0,
+            "passed": true
+          },
+          "tune_e2e_us": 359.9119981129964
+        },
+        {
+          "config": {
+            "reg_m": 4,
+            "reg_n": 4,
+            "reg_k": 4,
+            "waves_m": 2,
+            "waves_n": 2,
+            "num_buffers": 2,
+            "diagonal_traversal": true
+          },
+          "error": {
+            "max_abs": 1.0,
+            "rel_l2": 5.3527866839431226e-05,
+            "max_ref": 352.0,
+            "passed": true
+          },
+          "tune_e2e_us": 344.19184923171997
+        },
+        {
+          "config": {
+            "reg_m": 4,
+            "reg_n": 4,
+            "reg_k": 4,
+            "waves_m": 2,
+            "waves_n": 2,
+            "num_buffers": 3,
+            "diagonal_traversal": false
+          },
+          "error": {
+            "max_abs": 1.0,
+            "rel_l2": 5.3527866839431226e-05,
+            "max_ref": 352.0,
+            "passed": true
+          },
+          "tune_e2e_us": 393.9931790033976
+        },
+        {
+          "config": {
+            "reg_m": 4,
+            "reg_n": 4,
+            "reg_k": 4,
+            "waves_m": 2,
+            "waves_n": 2,
+            "num_buffers": 3,
+            "diagonal_traversal": true
+          },
+          "error": {
+            "max_abs": 1.0,
+            "rel_l2": 5.3527866839431226e-05,
+            "max_ref": 352.0,
+            "passed": true
+          },
+          "tune_e2e_us": 401.35733286539715
+        },
+        {
+          "config": {
+            "reg_m": 4,
+            "reg_n": 2,
+            "reg_k": 4,
+            "waves_m": 2,
+            "waves_n": 4,
+            "num_buffers": 2,
+            "diagonal_traversal": false
+          },
+          "error": {
+            "max_abs": 1.0,
+            "rel_l2": 5.3527866839431226e-05,
+            "max_ref": 352.0,
+            "passed": true
+          },
+          "tune_e2e_us": 362.86316315333045
+        },
+        {
+          "config": {
+            "reg_m": 4,
+            "reg_n": 2,
+            "reg_k": 4,
+            "waves_m": 2,
+            "waves_n": 4,
+            "num_buffers": 3,
+            "diagonal_traversal": false
+          },
+          "error": {
+            "max_abs": 1.0,
+            "rel_l2": 5.3527866839431226e-05,
+            "max_ref": 352.0,
+            "passed": true
+          },
+          "tune_e2e_us": 395.3416744867961
+        },
+        {
+          "config": {
+            "reg_m": 2,
+            "reg_n": 4,
+            "reg_k": 4,
+            "waves_m": 4,
+            "waves_n": 2,
+            "num_buffers": 2,
+            "diagonal_traversal": false
+          },
+          "error": {
+            "max_abs": 1.0,
+            "rel_l2": 5.3527866839431226e-05,
+            "max_ref": 352.0,
+            "passed": true
+          },
+          "tune_e2e_us": 362.4389966328939
+        },
+        {
+          "config": {
+            "reg_m": 2,
+            "reg_n": 4,
+            "reg_k": 4,
+            "waves_m": 4,
+            "waves_n": 2,
+            "num_buffers": 3,
+            "diagonal_traversal": false
+          },
+          "error": {
+            "max_abs": 1.0,
+            "rel_l2": 5.3527866839431226e-05,
+            "max_ref": 352.0,
+            "passed": true
+          },
+          "tune_e2e_us": 395.39184172948205
+        }
+      ]
+    }
+  ],
+  "resource_analysis_m2048": {
+    "shape": [
+      2048,
+      1024,
+      7168
+    ],
+    "workgroups": 128,
+    "calculated_lds_bytes_128x128x128_3_buffer": 208896,
+    "isa_vgpr_count": {
+      "local_2plus2": 456,
+      "hybrid_4wave": 200
+    },
+    "rocprof_dispatch_vgpr_count": {
+      "local_2plus2": 232,
+      "hybrid_4wave": 104,
+      "hybrid_8wave": 64
+    },
+    "rocprof_sq_cycles_median": {
+      "local_2plus2": 32656288,
+      "hybrid_4wave": 25517792,
+      "hybrid_8wave": 22739072
+    },
+    "rocprof_gl2_read_requests_median": {
+      "local_2plus2": 220313.5,
+      "hybrid_4wave": 220635.5,
+      "hybrid_8wave": 221011.0
+    },
+    "note": "GL2 traffic is effectively unchanged while hybrid8 reduces reported SQ cycles by about 30%. Several gfx1250 WMMA/wave counters returned zero and were not used."
+  },
+  "roof_measurements": {
+    "reference_wmma_pflops": 4.454,
+    "target_60_percent_pflops": 2.6724,
+    "raw_asm_wmma_pflops": {
+      "default": 4.4662,
+      "cartesian_4x4_sources": 4.3219,
+      "sequential_4x4_sources": 4.2813
+    },
+    "raw_asm_lds_plus_wmma_pflops": {
+      "discarded_measurements": {
+        "lane_distinct_4x4_partial_wait": 2.2365,
+        "reason": "Not reproducible in fresh runs; discarded from roof conclusions."
+      },
+      "stable_retest_20260817": {
+        "same_address_broadcast_4wave": 2.2646,
+        "lane_distinct_streaming_4x4_4wave": 1.5278,
+        "lane_distinct_streaming_4x5_5wave": 1.6854,
+        "extended_vgpr_streaming_4x8_4wave": 1.7771,
+        "extended_vgpr_streaming_5x8_4wave": 1.8526,
+        "extended_vgpr_4x8_wait_all": 1.151,
+        "note": "s_set_vgpr_msb uses a 16-bit previous/current encoding. Early 8-bit-only experiments were invalid."
+      }
+    },
+    "flydsl_pflops": {
+      "vgpr_only_best": 4.2939,
+      "vgpr_only_minimal_repro": {
+        "fx_gemm_unroll_4": 3.9961,
+        "grouped_inline_unroll_4": 4.1267,
+        "grouped_inline_unroll_16": 4.2939,
+        "raw_assembly": 4.3222
+      },
+      "old_hybrid_reuse_rmem_diagnostic": {
+        "pflops": 1.5592,
+        "valid_roof": false,
+        "reason": "The full hybrid kernel retained preload/epilogue costs and compile-time-expanded reuse_repeat into an instruction-fetch-limited straight-line WMMA body."
+      },
+      "lds_plus_wmma_best": 1.8526,
+      "full_gemm_best": 0.8294
+    },
+    "high_reuse_4x8": {
+      "raw_assembly_result": "Encodable with gfx1250 s_set_vgpr_msb using about 353 logical VGPRs.",
+      "compact_vgpr_only_pflops": 4.3072,
+      "stable_lane_distinct_lds_pflops": 1.7771,
+      "flydsl_duplicated_k_wave_lds_pflops": 1.1743,
+      "flydsl_duplicated_k_wave_vgpr_pflops": 1.3281,
+      "vgpr_measurement_valid_roof": false
+    },
+    "exact_config_ladder_8x4": {
+      "constant_source_compact_vgpr_pflops": 4.0823,
+      "dynamic_source_compact_vgpr_pflops": 1.5702,
+      "dynamic_source_raw_asm_pflops": 1.5946,
+      "full_framework_vgpr_reuse_pflops": 1.549,
+      "full_framework_lds_only_pflops": 1.273,
+      "normal_tdm_lds_pflops": 0.733,
+      "direct_b_pflops": 0.935,
+      "front_back_window_vgpr_count": 328,
+      "front_back_window_lds_only_pflops": 1.192,
+      "front_back_window_full_pflops": 0.865
+    },
+    "conclusion": "The 4.0823-PFLOPS compact result relies on constant/rematerialized sources. With real lane-varying operands held in VGPRs, compact tiles from 2x4 through 8x4 plateau near 1.57 PFLOPS, matching the full-framework 1.549-PFLOPS result. LDS then reduces the exact 8x4 path to 1.273 PFLOPS and TDM/barriers to 0.733 PFLOPS. WMMA reuseA/reuseB hints do not raise the dynamic-source roof, so B preshuffle cannot reach 2 PFLOPS."
+  }
+}

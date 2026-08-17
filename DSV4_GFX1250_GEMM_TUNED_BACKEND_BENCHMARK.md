@@ -1,77 +1,62 @@
-# DeepSeek V4 BF16 GEMM tuned backend benchmark on gfx1250
+# DeepSeek V4 BF16 GEMM performance benchmark on gfx1250
 
-Date: 2026-08-13
+Benchmark dates:
 
-DeepSeek V4 was selected because PR #4246 contains a complete gfx1250
-retune for its 180 BF16 GEMM shapes, while the Kimi-K3 block was not retuned
-against the final cluster-grid round-up.
+- Original benchmark: 2026-08-13
+- PR #875 follow-up: 2026-08-14
+- Full perf-set rerun: 2026-08-16
+- Consolidated production A16W16 and A8W8 update: 2026-08-17
 
-Compared backends:
+## Scope and data
+
+Results covered:
 
 1. Aiter generic Triton, tuned per shape over a compact candidate set
 2. Aiter Opus from [PR #4246](https://github.com/ROCm/aiter/pull/4246)
 3. Local FlyDSL gfx1250 kernel, tuned per shape over a compact candidate set
 4. Aiter Gluon as an additional gfx1250-native reference
+5. FlyDSL [PR #875](https://github.com/ROCm/FlyDSL/pull/875)
+6. Consolidated production A16W16 routes and the A8W8 tuned reference
 
 Raw results:
-[`dsv4_gemm_benchmark_results_final.json`](./dsv4_gemm_benchmark_results_final.json).
 
-Benchmark driver:
-[`benchmark_model_gemm_backends.py`](./benchmark_model_gemm_backends.py)
-with `--suite dsv4`.
+- [`dsv4_gemm_benchmark_results_perfset_20260816.json`](./dsv4_gemm_benchmark_results_perfset_20260816.json)
+- [`dsv4_flydsl_pr875_results_perfset_20260816.json`](./dsv4_flydsl_pr875_results_perfset_20260816.json)
+- [`a16w16_hybrid_gfx1250_results_20260816.json`](./a16w16_hybrid_gfx1250_results_20260816.json)
+- [`a16w16_hybrid_directb_results_20260817.json`](./a16w16_hybrid_directb_results_20260817.json)
+- [`a8w8_tuned_reproduction_20260817.json`](./a8w8_tuned_reproduction_20260817.json)
 
-## Executive summary
+Complete optimization history, reproduction commands, and debug notes:
+[`DSV4_GFX1250_GEMM_OPTIMIZATION_NOTES.md`](./DSV4_GFX1250_GEMM_OPTIMIZATION_NOTES.md).
 
-- All 32 backend/shape measurements passed correctness.
-- Tuned Opus is the strongest small-M kernel:
-  - `(32,64,7168)`: 5.15 us vs FlyDSL 17.55 us
-  - `(128,2048,4096)`: 11.46 us vs FlyDSL 12.08 us
-- Tuned FlyDSL is strongest through the middle/large M regime:
-  - `(512,2048,7168)`: **31.13 us**
-  - `(2048,1024,7168)`: **46.67 us**
-  - `(4096,2048,4096)`: **87.54 us**, effectively tied with Triton
-- Tuned Triton wins the largest shape:
-  - `(16384,2048,4096)`: **346.48 us**
-  - FlyDSL: 354.42 us, only 2.3% slower
-- FlyDSL wins end-to-end GPU interval on six of eight shapes because it launches
-  one kernel and has low dispatch overhead.
-- The main remaining FlyDSL gap is small-M split-K. The current dense kernel is
-  already competitive or best for M >= 512.
-
-## Environment
+## Environment and timing protocol
 
 | Component | Version / identity |
 |---|---|
 | GPU | AMD gfx1250, 256 CUs, physical GPU3 |
+| Host perf setup | `455_perf_set.sh` applied; SDMA/SVM/XNACK enabled; NUMA balancing off |
 | Docker image | `rocm/fw-bringup:gfx1250-atom-dev-20260729` |
 | Docker image ID | `sha256:eaef911cf1cb0a3629ae62bf99649799824818d010c7b50ccbc9fba9c90887f9` |
-| Python | 3.12.3 |
-| PyTorch | `2.11.0+rocm7.15.0a20260712` |
-| HIP runtime | 7.15.0 |
-| hipcc | HIP 7.15.0, AMD clang 23.0.0git `aa451e1f...` |
+| Python / PyTorch | 3.12.3 / `2.11.0+rocm7.15.0a20260712` |
+| HIP runtime / hipcc | 7.15.0 / HIP 7.15.0, AMD clang 23.0.0git `aa451e1f...` |
 | Triton | 3.8.0 |
 | Installed FlyDSL | 0.2.4 |
-| Aiter branch | `pr-4246` |
-| Aiter commit | `0f144e5e4449a8b0a125715997c2386cc190f6f6` |
-| FlyDSL examples base | `82a86966f72eed9e3e201991556fb10dd0fac647` |
+| PR #875 FlyDSL runtime | 0.3.0, commit `e3025ff57366011bca44607736d381beffeb7f50` |
+| Aiter | branch `pr-4246`, commit `0f144e5e4449a8b0a125715997c2386cc190f6f6` |
 
-Source hashes:
-
-| File | SHA-256 |
-|---|---|
-| benchmark-time `kernels/gemm_a16w16_gfx1250.py` | `0dc638c71165998814a3c8cd0154428aaf9e92aa30e36433f0767acb8b9cb172` |
-| current `kernels/gemm_a16w16_gfx1250.py` | `ec9140a161520fa1698c00de29c15003843e9f42cdccdf281cfa522d0def91ce` |
-| benchmark-time `benchmark_model_gemm_backends.py` | `77d8bf98e4da8b71c7dfc631a52ecdb4b3bea5bed5056695babd9db19649b8cb` |
-| current `benchmark_model_gemm_backends.py` | `dc367c2d20f5cc679364852a2fce11f27528505a36ba4e39531342d185dd07ca` |
-| `augment_gemm_benchmark_metrics.py` | `f6740204934ed41a8dc04cc236cf1e002f250d393d28ec1388997d61e9858aeb` |
+- 20 warmup calls and 50 final samples
+- Tuning: 3 warmups and 8 samples
+- PR #875 candidates: 5 consecutive correctness checks before timing
+- BF16 inputs, FP32 accumulation, BF16 output, no bias
+- K padding and unsupported-layout materialization occur outside the timed region
+- `kernel_us`: median sum of profiler GPU kernel durations per call
+- `e2e_us`: median HIP-event interval over ten calls, divided by ten
+- `TFLOPS = 2*M*N*K / time_us / 1e6`
+- `effective bandwidth = 2*(M*K + N*K + M*N) / time_us / 1e3 GB/s`
 
 ## Representative DSv4 shapes
 
-Arithmetic intensity:
-
-```text
-AI = 2*M*N*K / (2*(M*K + N*K + M*N)) FLOP/byte
-```
+`AI = 2*M*N*K / (2*(M*K + N*K + M*N)) FLOP/byte`
 
 | Name | M | N | K | AI | Class | DSv4 CSV winner |
 |---|---:|---:|---:|---:|---|---|
@@ -84,88 +69,40 @@ AI = 2*M*N*K / (2*(M*K + N*K + M*N)) FLOP/byte
 | compute_crossover | 4096 | 2048 | 4096 | 1024.0 | compute | Triton |
 | compute_large | 16384 | 2048 | 4096 | 1260.3 | compute | Triton |
 
-## Fair tuning methodology
+## Original four-backend results
 
-### Triton
-
-For every shape the benchmark compiles and measures a shape-dependent candidate
-set, then reruns the fastest correct candidate with the final settings.
-
-Candidate axes include:
-
-- block M: 16, 32, 64, 128, 256
-- block N: 32, 64, 128, 256
-- block K: 64, 128, 256
-- 4/8 waves
-- 2/3/4 stages where applicable
-- waves-per-EU 1/2/4/6/8
-- split-K 1/2/4/8 for small M
-
-This is a same-session compact tuner, not the full offline Triton search.
-
-### FlyDSL
-
-FlyDSL is also tuned per shape. Candidate axes include:
-
-- per-wave register tile M/N
-- K tile 64/128
-- 2/3 pipeline stages
-- TileM/TileN wave decomposition
-- sync/cross-stage overlap
-- grouped-M swizzle 16/32/64
-- waves-per-EU, kernarg preload, LLVM scheduling, and loop unroll
-
-K padding and unsupported-layout materialization occur outside the timed
-region. Runtime TDM bounds handle M/N edge tiles.
-
-### Opus
-
-When the DSv4 merged CSV selects Opus, the exact `kernelId` and `splitK` are
-launched. When the merged CSV selects Triton, the displayed Opus value is its
-shape heuristic and is marked with `*`; it is not an exhaustive Opus retune.
-
-### Timing
-
-- 20 warmup calls
-- 50 final samples
-- tuning: 3 warmups, 8 samples
-- BF16 inputs, FP32 accumulation, BF16 output, no bias
-- `kernel_us`: median sum of profiler GPU kernel durations per call
-- `e2e_us`: median HIP-event interval over ten calls, divided by ten
-- `TFLOPS = 2*M*N*K / time_us / 1e6`
-- `effective bandwidth = 2*(M*K + N*K + M*N) / time_us / 1e3 GB/s`
-
-## Kernel-only latency
+### Kernel-only latency
 
 Lower is better.
 
 | Shape | Triton us | Gluon us | Opus PR #4246 us | Tuned FlyDSL us | Winner |
 |---|---:|---:|---:|---:|---|
-| (1,1024,4096) | 13.86 | **4.41** | 5.19 | 9.55 | Gluon |
-| (32,64,7168) | 20.37 | 17.18 | **5.15** | 17.55 | Opus |
-| (32,32320,7168) | **68.21** | 70.27 | 465.27* | 68.86 | Triton |
-| (128,2048,4096) | 14.12 | 12.66 | **11.46** | 12.08 | Opus |
-| (512,2048,7168) | 42.48 | 50.37 | 50.29 | **31.13** | FlyDSL |
-| (2048,1024,7168) | 56.70 | 99.24 | 60.72 | **46.67** | FlyDSL |
-| (4096,2048,4096) | 88.63 | 118.19 | 404.30* | **87.54** | FlyDSL |
-| (16384,2048,4096) | **346.48** | 456.58 | 1601.91* | 354.42 | Triton |
+| (1,1024,4096) | 13.14 | 5.49 | **4.83** | 9.65 | Opus |
+| (32,64,7168) | 20.81 | 17.62 | **5.13** | 15.38 | Opus |
+| (32,32320,7168) | **68.13** | 68.49 | 443.76* | 69.03 | Triton |
+| (128,2048,4096) | 14.30 | 15.96 | **11.48** | 13.02 | Opus |
+| (512,2048,7168) | 42.38 | 49.89 | 49.26 | **31.79** | FlyDSL |
+| (2048,1024,7168) | 51.66 | 93.20 | 63.34 | **49.23** | FlyDSL |
+| (4096,2048,4096) | 108.25 | 119.51 | 426.49* | **84.69** | FlyDSL |
+| (16384,2048,4096) | **335.35** | 482.12† | 1532.16* | 336.64 | Triton |
 
 \* Opus heuristic because the merged DSv4 row selects Triton.
+\† Gluon failed correctness and is excluded from winner selection.
 
-## Kernel-only throughput
+### Kernel-only throughput
 
 | Shape | Triton TFLOPS | Gluon TFLOPS | Opus TFLOPS | FlyDSL TFLOPS |
 |---|---:|---:|---:|---:|
-| (1,1024,4096) | 0.61 | **1.90** | 1.62 | 0.88 |
-| (32,64,7168) | 1.44 | 1.71 | **5.71** | 1.67 |
-| (32,32320,7168) | **217.38** | 210.99 | 31.87* | 215.31 |
-| (128,2048,4096) | 152.08 | 169.65 | **187.47** | 177.82 |
-| (512,2048,7168) | 353.84 | 298.44 | 298.90 | **482.95** |
-| (2048,1024,7168) | 530.21 | 302.94 | 495.11 | **644.21** |
-| (4096,2048,4096) | 775.38 | 581.45 | 169.97* | **784.96** |
-| (16384,2048,4096) | **793.35** | 602.04 | 171.59* | 775.56 |
+| (1,1024,4096) | 0.64 | 1.53 | **1.74** | 0.87 |
+| (32,64,7168) | 1.41 | 1.67 | **5.73** | 1.91 |
+| (32,32320,7168) | **217.64** | 216.49 | 33.41* | 214.80 |
+| (128,2048,4096) | 150.17 | 134.53 | **187.14** | 164.96 |
+| (512,2048,7168) | 354.68 | 301.29 | 305.15 | **472.92** |
+| (2048,1024,7168) | 582.02 | 322.57 | 474.67 | **610.67** |
+| (4096,2048,4096) | 634.85 | 575.00 | 161.13* | **811.46** |
+| (16384,2048,4096) | **819.68** | 570.14† | 179.41* | 816.53 |
 
-## Kernel-only effective memory bandwidth
+### Kernel-only effective memory bandwidth
 
 This is an algorithmic lower-bound traffic rate, not a hardware-counter
 measurement of HBM traffic. It assumes each BF16 A, B, and C element is moved
@@ -174,172 +111,116 @@ exceed physical HBM bandwidth.
 
 | Shape | Triton GB/s | Gluon GB/s | Opus GB/s | FlyDSL GB/s |
 |---|---:|---:|---:|---:|
-| (1,1024,4096) | 606.0 | **1906.4** | 1619.5 | 879.2 |
-| (32,64,7168) | 67.8 | 80.3 | **268.2** | 78.7 |
-| (32,32320,7168) | **6830.2** | 6629.3 | 1001.3* | 6765.2 |
-| (128,2048,4096) | 1299.5 | 1449.7 | **1601.9** | 1519.4 |
-| (512,2048,7168) | 913.2 | 770.3 | 771.4 | **1246.5** |
-| (2048,1024,7168) | 850.6 | 486.0 | 794.3 | **1033.5** |
-| (4096,2048,4096) | 757.2 | 567.8 | 166.0* | **766.6** |
-| (16384,2048,4096) | **629.5** | 477.7 | 136.2* | 615.4 |
+| (1,1024,4096) | 639.3 | 1530.7 | **1740.7** | 870.1 |
+| (32,64,7168) | 66.3 | 78.3 | **269.3** | 89.7 |
+| (32,32320,7168) | **6838.3** | 6802.3 | 1049.8* | 6749.1 |
+| (128,2048,4096) | 1283.2 | 1149.5 | **1599.1** | 1409.6 |
+| (512,2048,7168) | 915.4 | 777.6 | 787.6 | **1220.6** |
+| (2048,1024,7168) | 933.8 | 517.5 | 761.5 | **979.7** |
+| (4096,2048,4096) | 620.0 | 561.5 | 157.4* | **792.4** |
+| (16384,2048,4096) | **650.4** | 452.4† | 142.4* | 647.9 |
 
-## End-to-end GPU interval
+### End-to-end GPU interval
 
 | Shape | Triton us | Gluon us | Opus PR #4246 us | Tuned FlyDSL us | Winner |
 |---|---:|---:|---:|---:|---|
-| (1,1024,4096) | 38.20 | 87.83 | 32.39 | **10.30** | FlyDSL |
-| (32,64,7168) | 37.97 | 86.18 | 32.44 | **18.23** | FlyDSL |
-| (32,32320,7168) | **69.66** | 87.74 | 573.56* | 70.62 | Triton |
-| (128,2048,4096) | 38.48 | 93.88 | 33.18 | **13.30** | FlyDSL |
-| (512,2048,7168) | 44.22 | 86.24 | 52.21 | **33.10** | FlyDSL |
-| (2048,1024,7168) | 58.75 | 99.89 | 64.45 | **48.10** | FlyDSL |
-| (4096,2048,4096) | **89.13** | 119.46 | 531.89* | 89.16 | tie |
-| (16384,2048,4096) | 339.37 | 457.65 | 1712.21* | **332.24** | FlyDSL |
+| (1,1024,4096) | 37.54 | 89.73 | 32.41 | **10.44** | FlyDSL |
+| (32,64,7168) | 37.77 | 86.51 | 32.67 | **16.21** | FlyDSL |
+| (32,32320,7168) | **69.60** | 88.44 | 574.95* | 71.00 | Triton |
+| (128,2048,4096) | 37.86 | 92.94 | 33.59 | **14.12** | FlyDSL |
+| (512,2048,7168) | 43.96 | 88.44 | 49.62 | **33.19** | FlyDSL |
+| (2048,1024,7168) | 53.84 | 95.03 | 64.35 | **50.58** | FlyDSL |
+| (4096,2048,4096) | 92.63 | 120.51 | 528.94* | **88.30** | FlyDSL |
+| (16384,2048,4096) | **336.31** | 483.33† | 1656.75* | 338.82 | Triton |
 
-Profiler overhead can make `kernel_us` slightly larger than batched `e2e_us`
-for long kernels. Differences below approximately 5% should be treated as
-noise.
+### Selected local FlyDSL configurations
 
-## Selected FlyDSL configurations
+| Shape | reg M | reg N | reg K | waves MxN | stages | overlap | swizzle | scheduler |
+|---|---:|---:|---:|---|---:|---|---:|---|
+| (1,1024,4096) | 1 | 1 | 4 | 1x2 | 3 | cross | 32 | default |
+| (32,64,7168) | 1 | 1 | 4 | 1x2 | 3 | cross | 32 | default |
+| (32,32320,7168) | 1 | 8 | 4 | 2x1 | 3 | cross | 32 | default |
+| (128,2048,4096) | 1 | 4 | 4 | 2x1 | 3 | cross | 32 | default |
+| (512,2048,7168) | 4 | 4 | 4 | 2x1 | 3 | cross | 32 | default |
+| (2048,1024,7168) | 4 | 8 | 4 | 2x1 | 3 | cross | 32 | default |
+| (4096,2048,4096) | 4 | 8 | 4 | 2x1 | 3 | cross | 32 | max-memory-clause |
+| (16384,2048,4096) | 4 | 8 | 4 | 2x1 | 3 | cross | 32 | max-memory-clause |
 
-| Shape | reg M | reg N | reg K | waves MxN | stages | overlap | swizzle |
-|---|---:|---:|---:|---|---:|---|---:|
-| (1,1024,4096) | 1 | 1 | 4 | 1x2 | 3 | cross | 32 |
-| (32,64,7168) | 1 | 4 | 4 | 2x1 | 3 | cross | 32 |
-| (32,32320,7168) | 1 | 8 | 4 | 2x1 | 3 | cross | 32 |
-| (128,2048,4096) | 1 | 4 | 4 | 2x1 | 3 | cross | 32 |
-| (512,2048,7168) | 4 | 4 | 4 | 2x1 | 3 | cross | 32 |
-| (2048,1024,7168) | 4 | 8 | 4 | 2x1 | 3 | sync | 32 |
-| (4096,2048,4096) | 4 | 8 | 4 | 2x1 | 3 | cross | 64 |
-| (16384,2048,4096) | 4 | 8 | 4 | 2x1 | 3 | sync | 32 |
+## FlyDSL PR #875 results
 
-## Why fused split-K is disabled
+Exact PR head: `1273aa33d5eb8c6f5b724f890fdf159439f8bcc4`.
+Positive delta means PR #875 is slower than local FlyDSL. Differences around
+5% should be treated as noise.
 
-PR #4246 originally added 1378 fused single-kernel split-K kids in the
-`[21000,30000)` range. The design keeps non-last partials dirty-resident in
-GL2, synchronizes split workgroups with a cluster barrier, and lets the last
-workgroup stage/reduce partials from LDS.
+| Shape | PR #875 kernel us | e2e us | TFLOPS | GB/s | Local FlyDSL us | Delta | Overall winner |
+|---|---:|---:|---:|---:|---:|---:|---|
+| (1,1024,4096) | 12.12 | 13.00 | 0.69 | 693.1 | 9.65 | +25.5% | Opus |
+| (32,64,7168) | 21.77 | 22.50 | 1.35 | 63.4 | 15.38 | +41.5% | Opus |
+| (32,32320,7168) | 68.79 | 70.40 | 215.53 | 6772.1 | 69.03 | -0.3% | Triton |
+| (128,2048,4096) | 20.81 | 22.67 | 103.20 | 881.8 | 13.02 | +59.8% | Opus |
+| (512,2048,7168) | 39.54 | 40.89 | 380.19 | 981.2 | 31.79 | +24.4% | Local FlyDSL |
+| (2048,1024,7168) | **38.78** | **42.34** | **775.32** | **1243.9** | 49.23 | **-21.2%** | PR #875 |
+| (4096,2048,4096) | 101.08 | 93.59 | 679.85 | 663.9 | 84.69 | +19.4% | Local FlyDSL |
+| (16384,2048,4096) | 358.72 | 360.74 | 766.27 | 608.0 | 336.64 | +6.6% | Triton |
 
-Commit:
+Across all eight shapes, PR #875 is 17.1% slower by kernel-time geomean and
+15.7% slower by end-to-end geomean versus local FlyDSL.
 
-```text
-1dea7996a766cd901b59002aa0206bdfc6e3237b
-[opus][gfx1250] unregister the fused split-K family until its pipeline is fixed
-```
+### Selected PR #875 configurations
 
-states that the pipeline still “misbehaves.” This is a functional/stability
-issue, not a measured performance rejection. The commit does not document a
-single narrowed root cause. To prevent a wrong kernel from being selected and
-to avoid compiling 1378 unusable candidates, it sets:
+| Shape | tile MxNxK | waves MxN | buffers | variant | split-K | waves/EU |
+|---|---|---|---:|---|---:|---:|
+| (1,1024,4096) | 16x64x128 | 1x4 | 3 | bandwidth-bound | 1 | default |
+| (32,64,7168) | 32x64x128 | 2x2 | 3 | bandwidth-bound | 1 | default |
+| (32,32320,7168) | 32x64x128 | 2x2 | 3 | bandwidth-bound | 1 | default |
+| (128,2048,4096) | 128x128x128 | 2x4 | 2 | bandwidth-bound | 8 | default |
+| (512,2048,7168) | 128x128x128 | 2x2 | 3 | bandwidth-bound | 1 | default |
+| (2048,1024,7168) | 128x128x128 | 2x2 | 3 | bandwidth-bound | 1 | default |
+| (4096,2048,4096) | 128x128x128 | 2x2 | 2 | bandwidth-bound | 1 | 2 |
+| (16384,2048,4096) | 128x128x128 | 2x2 | 2 | compute-bound | 1 | default |
 
-```python
-GFX1250_SPLITK_FUSE_ENABLED = False
-```
+## Consolidated production A16W16
 
-Consequences:
+GPU3 results from 2026-08-17:
 
-- the kid list is empty
-- tuner selection excludes fused kids
-- codegen emits no fused instances
-- the `[21000,30000)` kid range is unclaimed
-- factory and device pipeline source remain in-tree
+| Shape | Production kernel us | Production TFLOPS | Comparison baseline | Baseline us | Baseline TFLOPS | Correctness |
+|---|---:|---:|---|---:|---:|---|
+| (2048,1024,7168) | **37.0145** | **812.243** | same-process baseline | 48.91 | 614.66 | passed bit-exact |
+| (4096,2048,4096) | **77.8600** | **882.603** | same-session producer/consumer | 84.5455 | 812.811 | passed bit-exact |
+| (16384,2048,4096) | **285.1405** | **964.009** | same-session producer/consumer | 330.6135 | 831.418 | passed bit-exact |
 
-The PR performance sweep explicitly excluded fused kids; this report also does
-not benchmark them. Re-enabling is mechanically a one-line change, but should
-not be done until the pipeline passes broad correctness/stability testing.
+The selected routes live in the single
+[`kernels/gemm_a16w16_gfx1250.py`](./kernels/gemm_a16w16_gfx1250.py)
+production file.
 
-## Optimization guidance
+| Route | Path | reg MxNxK | waves MxN | buffers | swizzle | XCD remap |
+|---|---|---|---|---:|---:|---|
+| exact `(2048,1024,7168)` | all-compute | 2x4x4 | 4x2 | 3 | 32 | — |
+| aligned `M >= 4096` | A-LDS/direct-B | 8x4x2 | 1x4 | 3 | 8 | enabled |
 
-### Small M
+## A8W8 tuned reference and reproduction
 
-Opus remains the strongest kernel-only backend for skinny M:
+GPU3 measurements from 2026-08-17:
 
-```text
-(32,64,7168)
-Opus:   5.15 us
-FlyDSL: 17.55 us
-gap:    3.41x
-```
+| Shape | CSV us | CSV PFLOPS | Reproduced us | Reproduced PFLOPS |
+|---|---:|---:|---:|---:|
+| (8192,6144,7168) | 130.27 | 5.539 | **118.36** | **6.096** |
+| (16384,7168,4096) | 172.83 | 5.567 | **169.95** | **5.661** |
+| (32768,7168,4096) | 340.64 | 5.649 | **382.20** | **5.034** |
 
-FlyDSL needs a dedicated small-M split-K family rather than more tuning of the
-current dense kernel. The likely design space is:
+The three-shape geometric-mean latency ratio is 1.0008. The selected A8W8
+configuration is `256x256x128`, four waves, and four buffers.
 
-- M tile 16/32
-- K tile 256/512
-- split-K sufficient to fill 256 CUs
-- 1xN A multicast
-- a fused/single-pass reduction to avoid Opus's two-dispatch gap
-
-### M >= 512
-
-The tuned FlyDSL path is already competitive:
-
-- wins kernel-only at M=512, 2048, and 4096
-- is within 2.3% of Triton at M=16384
-
-Large-M optimization should preserve the current 2+2 / 128x128x128 family and
-focus on:
-
-- shape dispatch for stages=2 vs 3
-- swizzle=32 vs 64
-- reducing conservative LDS/WMMA waits
-- retaining compiler scheduling knobs only when per-shape measurements win
-
-## Reproduction
-
-### Fetch PR #4246
-
-```bash
-cd /home/xiaobizh/aiter
-git fetch origin pull/4246/head:pr-4246
-git switch pr-4246
-```
-
-### Run DSv4 suite on physical GPU3
-
-```bash
-docker run --rm \
-  --device=/dev/kfd \
-  --device=/dev/dri \
-  -e ROCR_VISIBLE_DEVICES=3 \
-  -e PYTHONUNBUFFERED=1 \
-  -e PYTHONPATH=/home/xiaobizh/aiter \
-  -e AITER_ROOT=/home/xiaobizh/aiter \
-  -e FLYDSL_EXAMPLES_ROOT=/home/xiaobizh/flydsl-examples \
-  -e BENCH_DOCKER_IMAGE=rocm/fw-bringup:gfx1250-atom-dev-20260729 \
-  -v /home/xiaobizh/aiter:/home/xiaobizh/aiter \
-  -v /home/xiaobizh/flydsl-examples:/home/xiaobizh/flydsl-examples \
-  -w /home/xiaobizh/flydsl-examples \
-  --entrypoint=/bin/bash \
-  rocm/fw-bringup:gfx1250-atom-dev-20260729 \
-  -lc '
-    ln -s \
-      /usr/local/lib/python3.12/dist-packages/_rocm_sdk_core/lib/libamdhip64.so.7 \
-      /usr/local/lib/python3.12/dist-packages/_rocm_sdk_core/lib/libamdhip64.so \
-      2>/dev/null || true
-    ln -s \
-      /usr/local/lib/python3.12/dist-packages/_rocm_sdk_core/lib/llvm/amdgcn \
-      /usr/local/lib/python3.12/dist-packages/_rocm_sdk_core/amdgcn \
-      2>/dev/null || true
-    python3 benchmark_model_gemm_backends.py \
-      --suite dsv4 \
-      --device 0 \
-      --warmup 20 \
-      --iterations 50 \
-      --tune-warmup 3 \
-      --tune-iterations 8 \
-      --batch-repeats 10 \
-      --tune-batch-repeats 3 \
-      --output dsv4_gemm_benchmark_results_final.json
-  '
-```
-
-## Limitations
+## Measurement limitations
 
 - Triton and FlyDSL use same-session compact candidate tuners, not exhaustive
   offline searches over every legal configuration.
-- Opus is explicitly tuned only where the merged DSv4 CSV selects Opus.
-- Gluon is included for context but is not part of the requested fair
-  Triton/Opus/FlyDSL comparison.
-- Fused split-K is disabled and unmeasured.
-- PR #4246 documents approximately +/-5% per-shape timing noise.
+- Opus is explicitly tuned only where the merged DSv4 CSV selects Opus; `*`
+  marks heuristic values.
+- Gluon is incorrect on `(16384,2048,4096)` and is excluded there; `†` marks
+  that result.
+- PR #875 M/N padding is materialized outside the timed region.
+- Profiler overhead can make `kernel_us` slightly larger than batched `e2e_us`
+  for long kernels.
+- A8W8 reproduction values use profiler self-device time, matching the tuner.
+- Differences below approximately 5% should be treated as timing noise.

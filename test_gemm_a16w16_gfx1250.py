@@ -9,12 +9,24 @@ from flydsl.runtime.device import get_rocm_arch
 from kernels import gemm_a16w16_gfx1250 as gemm_module
 
 gemm_a16w16 = gemm_module.gemm_a16w16
+_gemm_producer_consumer = gemm_module._gemm_producer_consumer
 
 
 pytestmark = pytest.mark.skipif(
     not torch.cuda.is_available() or not str(get_rocm_arch() or "").startswith("gfx1250"),
     reason="gfx1250 GPU is required",
 )
+
+
+def test_auto_direct_b_path():
+    torch.manual_seed(7)
+    a = torch.randn((4096, 64), device="cuda", dtype=torch.bfloat16)
+    b = torch.randn((256, 64), device="cuda", dtype=torch.bfloat16)
+
+    actual = gemm_a16w16(a, b)
+    expected = a @ b.T
+
+    torch.testing.assert_close(actual, expected, atol=0.2, rtol=0.02)
 
 
 @pytest.mark.parametrize(
@@ -86,7 +98,7 @@ def test_runtime_m_output_guard():
     )
     out = parent[:m]
 
-    actual = gemm_a16w16(
+    actual = _gemm_producer_consumer(
         a,
         b,
         out=out,
@@ -113,10 +125,10 @@ def test_runtime_m_reuses_compiled_module():
     b = torch.randn((128, 256), device="cuda", dtype=torch.bfloat16)
 
     a0 = torch.randn((65, 256), device="cuda", dtype=torch.bfloat16)
-    out0 = gemm_a16w16(a0, b, **common)
+    out0 = _gemm_producer_consumer(a0, b, **common)
     info0 = gemm_module._cached_module.cache_info()
     a1 = torch.randn((97, 256), device="cuda", dtype=torch.bfloat16)
-    out1 = gemm_a16w16(a1, b, **common)
+    out1 = _gemm_producer_consumer(a1, b, **common)
     info1 = gemm_module._cached_module.cache_info()
 
     torch.testing.assert_close(out0, a0 @ b.T, atol=0.2, rtol=0.02)
@@ -130,7 +142,7 @@ def test_compiler_tuning_options():
     a = torch.randn((128, 512), device="cuda", dtype=torch.bfloat16)
     b = torch.randn((128, 512), device="cuda", dtype=torch.bfloat16)
 
-    actual = gemm_a16w16(
+    actual = _gemm_producer_consumer(
         a,
         b,
         waves_per_eu=2,
@@ -160,7 +172,7 @@ def test_pipeline_stages(num_stages):
     a = torch.randn((128, 512), device="cuda", dtype=torch.bfloat16)
     b = torch.randn((128, 512), device="cuda", dtype=torch.bfloat16)
 
-    actual = gemm_a16w16(a, b, num_stages=num_stages)
+    actual = _gemm_producer_consumer(a, b, num_stages=num_stages)
 
     torch.testing.assert_close(actual, a @ b.T, atol=0.2, rtol=0.02)
 

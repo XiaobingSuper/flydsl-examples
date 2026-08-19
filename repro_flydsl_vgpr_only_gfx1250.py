@@ -44,14 +44,24 @@ WMMA_FLOPS = 2 * 16 * 16 * 32
 def create_module(
     mode: str,
     source_mode: str,
+    arb_mode: str,
     unroll: int,
     reg_m: int,
     reg_n: int,
 ):
     if mode not in ("intrinsic", "grouped", "reuse_a", "reuse_b"):
         raise ValueError(f"unsupported mode: {mode}")
-    if source_mode not in ("constants", "global"):
+    if source_mode not in (
+        "constants",
+        "lane",
+        "lane_elements",
+        "lane_hash",
+        "global",
+        "global_uniform",
+    ):
         raise ValueError(f"unsupported source mode: {source_mode}")
+    if arb_mode not in ("none", "legacy", "cdna5", "both"):
+        raise ValueError(f"unsupported arb mode: {arb_mode}")
     if unroll < 1:
         raise ValueError("unroll must be positive")
     if reg_m < 1 or reg_n < 1:
@@ -79,7 +89,22 @@ def create_module(
         arg_source: fx.Tensor,
         i32_iterations: fx.Int32,
     ):
-        fx.rocdl.disable_xdl_arb_stall()
+        if arb_mode in ("legacy", "both"):
+            fx.rocdl.disable_xdl_arb_stall()
+        if arb_mode in ("cdna5", "both"):
+            # CDNA5 ISA: WAVE_SCHED_MODE bit 2 disables the 16-cycle
+            # post-WMMA arbitration stall.  LLVM hwreg encoding:
+            # ID=26, offset=2, size=1 -> 154.
+            llvm_dialect.call_intrinsic(
+                None,
+                "llvm.amdgcn.s.setreg",
+                [
+                    arith.unwrap(arith.constant(154, type=T.i32)),
+                    arith.unwrap(arith.constant(1, type=T.i32)),
+                ],
+                [],
+                [],
+            )
 
         a_atoms = [
             fx.make_rmem_tensor(16, fx.BFloat16)
@@ -93,7 +118,7 @@ def create_module(
             fx.make_rmem_tensor(8, fx.Float32)
             for _ in range_constexpr(wmmas_per_group)
         ]
-        if source_mode == "global":
+        if source_mode in ("global", "global_uniform"):
             source_base = (
                 fx.block_idx.x * THREADS_PER_WORKGROUP
                 + fx.thread_idx.x
@@ -164,6 +189,69 @@ def create_module(
                 _detach_load_dependency(a_atoms[idx])
             for idx in range_constexpr(reg_n):
                 _detach_load_dependency(b_atoms[idx])
+        elif source_mode == "lane":
+            lane_value = (
+                fx.thread_idx.x % WAVE_SIZE
+            ).to(fx.BFloat16)
+            for idx in range_constexpr(reg_m):
+                a_atoms[idx].store(
+                    Vec.filled(16, lane_value, fx.BFloat16)
+                )
+            for idx in range_constexpr(reg_n):
+                b_atoms[idx].store(
+                    Vec.filled(16, lane_value, fx.BFloat16)
+                )
+        elif source_mode == "lane_elements":
+            lane = fx.thread_idx.x % WAVE_SIZE
+
+            def _lane_fragment(seed):
+                values = [
+                    (lane + seed + element + 1).to(fx.BFloat16)
+                    for element in range_constexpr(16)
+                ]
+                return Vec(
+                    vector_dialect.from_elements(
+                        T.vec(16, T.bf16),
+                        [as_ir_value(value) for value in values],
+                    )
+                )
+
+            for idx in range_constexpr(reg_m):
+                a_atoms[idx].store(_lane_fragment(idx * 16))
+            for idx in range_constexpr(reg_n):
+                b_atoms[idx].store(
+                    _lane_fragment((reg_m + idx) * 16)
+                )
+        elif source_mode == "lane_hash":
+            lane = fx.thread_idx.x % WAVE_SIZE
+
+            def _lane_hash_fragment(seed):
+                values = [
+                    (
+                        (
+                            (lane + 1) * 17
+                            + (seed + element + 1) * 29
+                        )
+                        % 251
+                        - 125
+                    ).to(fx.BFloat16)
+                    for element in range_constexpr(16)
+                ]
+                return Vec(
+                    vector_dialect.from_elements(
+                        T.vec(16, T.bf16),
+                        [as_ir_value(value) for value in values],
+                    )
+                )
+
+            for idx in range_constexpr(reg_m):
+                a_atoms[idx].store(
+                    _lane_hash_fragment(idx * 16)
+                )
+            for idx in range_constexpr(reg_n):
+                b_atoms[idx].store(
+                    _lane_hash_fragment((reg_m + idx) * 16)
+                )
         else:
             for idx in range_constexpr(reg_m):
                 a_atoms[idx].store(
@@ -226,10 +314,12 @@ def create_module(
                             c_raw = arith._to_raw(
                                 c_atoms[idx].load()
                             )
+                            # The hint belongs to the current instruction and
+                            # predicts reuse by the following instruction.
                             reused = (
-                                mode == "reuse_a" and n > 0
+                                mode == "reuse_a" and n + 1 < reg_n
                             ) or (
-                                mode == "reuse_b" and m > 0
+                                mode == "reuse_b" and m + 1 < reg_m
                             )
                             result = raw_rocdl.wmma_f32_16x16x32_bf16_(
                                 c_raw.type,
@@ -357,6 +447,7 @@ def create_module(
 def benchmark(
     mode: str,
     source_mode: str,
+    arb_mode: str,
     iterations: int,
     unroll: int,
     reg_m: int,
@@ -371,6 +462,7 @@ def benchmark(
     launch = create_module(
         mode,
         source_mode,
+        arb_mode,
         unroll,
         reg_m,
         reg_n,
@@ -380,16 +472,19 @@ def benchmark(
         dtype=torch.float32,
         device="cuda",
     )
-    source = torch.randn(
-        (
-            WORKGROUPS
-            * THREADS_PER_WORKGROUP
-            * (reg_m + reg_n)
-            * 16
-        ),
-        dtype=torch.bfloat16,
-        device="cuda",
-    )
+    source_elements = (reg_m + reg_n) * 16
+    if source_mode == "global_uniform":
+        source = torch.randn(
+            source_elements,
+            dtype=torch.bfloat16,
+            device="cuda",
+        ).repeat(WORKGROUPS * THREADS_PER_WORKGROUP)
+    else:
+        source = torch.randn(
+            WORKGROUPS * THREADS_PER_WORKGROUP * source_elements,
+            dtype=torch.bfloat16,
+            device="cuda",
+        )
     stream = torch.cuda.current_stream()
     device_index = out.device.index or 0
     _run_compiled(
@@ -426,7 +521,7 @@ def benchmark(
     )
     pflops = total_flops / median_us / 1.0e9
     print(
-        f"mode={mode} source={source_mode} "
+        f"mode={mode} source={source_mode} arb={arb_mode} "
         f"tile={reg_m}x{reg_n} "
         f"groups={iterations} unroll={unroll} "
         f"median_us={median_us:.3f} PFLOPS={pflops:.4f}"
@@ -442,8 +537,21 @@ def main():
     )
     parser.add_argument(
         "--source",
-        choices=("constants", "global"),
+        choices=(
+            "constants",
+            "lane",
+            "lane_elements",
+            "lane_hash",
+            "global",
+            "global_uniform",
+        ),
         default="constants",
+    )
+    parser.add_argument(
+        "--arb",
+        choices=("none", "legacy", "cdna5", "both"),
+        default="legacy",
+        help="CDNA5 bit 2 requires explicit WMMA hazard spacing",
     )
     parser.add_argument("--iterations", type=int, default=6144)
     parser.add_argument("--unroll", type=int, default=4)
@@ -463,6 +571,7 @@ def main():
     benchmark(
         args.mode,
         args.source,
+        args.arb,
         args.iterations,
         args.unroll,
         args.reg_m,

@@ -518,6 +518,16 @@ only two measured paths:
   `(16384,2048,4096)` at **287.875 us / 0.955 PFLOPS**
 
 Both measurements passed bit-exact comparison with the BF16 PyTorch reference.
+The same 8-wave route was later enabled for the exact M=128 and M=512
+production shapes:
+
+- `(128,2048,4096)`: 27.000 -> **16.443 us**
+- `(512,2048,7168)`: 45.627 -> **29.663 us**
+
+Direct-B still reserves the otherwise-unused B LDS region. Removing it reduces
+LDS from about 165 KiB to 58 KiB, admits more resident work, and regresses the
+large shape from about 0.99 to 0.74 PFLOPS under the power-limited operating
+point. The reservation therefore remains as an intentional occupancy throttle.
 Quadrant, direct-AB, named-barrier, distributed-TDM, operand-reuse, diagonal,
 row-window, clustering, and scheduling-search branches were removed from the
 production implementation after failing to beat these paths.
@@ -525,27 +535,33 @@ production implementation after failing to beat these paths.
 An exact-config roof ladder (`8x4` per wave, four compute waves) refines the
 bottleneck:
 
-- constant/rematerialized standalone VGPR-only: **4.08 PFLOPS**
-- dynamic per-lane standalone VGPR-only: **1.57 PFLOPS**
+- low-activity constant standalone VGPR-only: **4.08 PFLOPS**
+- high-entropy random standalone VGPR-only: **1.57 PFLOPS**
 - full-kernel framework with operands reused in VGPR: **1.55 PFLOPS**
 - full-kernel LDS-only diagnostic: **1.27 PFLOPS**
 - normal TDM+LDS pipeline: **0.73 PFLOPS**
 - asymmetric direct-B pipeline: **0.93 PFLOPS**
 
-The previous 4.3-PFLOPS “VGPR-only roof” used compile-time constants that LLVM
-could rematerialize and alias with accumulator storage. With real lane-varying
-operands loaded once and then kept in VGPRs, every tested FlyDSL tile from 2x4
-through 8x4 converges to 1.54--1.57 PFLOPS; WMMA `reuseA/reuseB` hints do not
-improve it. A corrected hand-assembly host-buffer test independently reaches
-1.5942--1.5949 PFLOPS on GPU3. The full-kernel 1.55-PFLOPS result therefore
-matches the realistic ISA roof instead of indicating a separate compiler
-framework regression.
+The original interpretation of 1.57 PFLOPS as a dynamic-VGPR operand ceiling
+was wrong. A sustained raw-assembly run with low-activity operands holds
+2364 MHz at about 1145 W and reaches 4.252 PFLOPS. With random lane-distinct
+BF16 operands, the same hot loop drops to 770 MHz at about 1896 W and reaches
+1.573 PFLOPS. A high-entropy operand pattern generated entirely with VALU also
+drops to 1.683 PFLOPS, ruling out VMEM dependency tracking.
 
-LDS then costs another 19%, and TDM/barriers another 42%. A correct front/back
-A window reduces allocation from 355 to 328 VGPRs, but its serial reloads leave
-it at 1.19 PFLOPS (LDS-only) and 0.865 PFLOPS end-to-end. B preshuffle can only
-improve the smaller B-global portion and cannot cross the dynamic-operand
-WMMA ceiling.
+The CDNA5 ISA additionally documents `WAVE_SCHED_MODE[2]` for disabling the
+16-cycle XDL arbitration stall; the old FlyDSL helper selects bit 4. The
+isolated loop changes by less than 0.1% with bit 2, but enabling it in the
+current production schedule violates WMMA hazard spacing and produces incorrect
+output. It is therefore not usable until the required dependency delays are
+emitted. Correcting the direction of `reuseA/reuseB` hints also changes the
+isolated benchmark by less than 0.1%.
+
+Consequently, 4.3 PFLOPS is a nominal-clock, low-switching roof, while
+1.55--1.60 PFLOPS is the sustained high-activity roof under the current
+automatic power/clock policy. The measured LDS and TDM deltas remain useful
+end-to-end comparisons, but they cannot be interpreted as pure operand-path
+costs without also normalizing effective SCLK and power.
 
 ## Why fused split-K is disabled
 
@@ -736,13 +752,13 @@ docker run --rm \
   '
 ```
 
-### Run the hybrid experiment
+### Run the focused production-route benchmark
 
 Using the original FlyDSL 0.2.4 benchmark container after applying
 `455_perf_set.sh`:
 
 ```bash
-python3 benchmark_a16w16_hybrid_gfx1250.py \
+python3 benchmark_a16w16_routes_gfx1250.py \
   --device 0 \
   --warmup 20 \
   --iterations 50 \

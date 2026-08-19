@@ -80,12 +80,49 @@ roof, even though the timed loop contains no further memory operations:
 | 4x8 | 1.574 |
 | 8x4 | 1.571 |
 
-The result is insensitive to tile depth and WMMA unrolling. Enabling gfx1250
-`reuseA` or `reuseB` hints also gives 1.559/1.570 PFLOPS. The corrected raw
-host-buffer benchmark independently gives 1.5942--1.5949 PFLOPS. Therefore 4.3
-PFLOPS is a constant/rematerialized synthetic ceiling, while **about 1.6
-PFLOPS is the realistic dynamic-VGPR operand ceiling** for this instruction
-path.
+The result is insensitive to tile depth and WMMA unrolling. The corrected raw
+host-buffer benchmark independently gives 1.5942--1.5949 PFLOPS. This plateau
+was initially interpreted as a dynamic-VGPR operand ceiling, but controlled
+data-pattern and clock measurements disprove that interpretation.
+
+## Root cause: data-dependent power throttling
+
+The CDNA5 ISA specifies a 16-cycle BF16 WMMA and a software-controlled
+multicycle arbitration stall. Neither that stall, WMMA data hazards, global
+load scoreboarding, nor operand reuse explains the 1.6-PFLOPS result:
+
+- the isolated throughput loop changes by less than 0.1% when selecting the
+  documented `WAVE_SCHED_MODE[2]`, legacy bit 4, both bits, or neither
+- correcting `reuseA`/`reuseB` so the hint predicts reuse by the *next*
+  instruction changes throughput by less than 0.1%
+- lane-varying operands generated entirely with VALU, with no memory loads,
+  reach the same low range when their element pattern has high entropy
+
+Sustained raw-assembly runs expose the actual cause:
+
+| Operand pattern | Initialization | PFLOPS | sampled SCLK | sampled power |
+|---|---|---:|---:|---:|
+| low-entropy / lane-uniform | scalar/VALU | 4.252 | 2364 MHz | 1145 W |
+| random BF16, lane-distinct | global buffer | 1.573 | 770 MHz | 1896 W |
+
+The instruction stream, 192-register A/B/C allocation, workgroup geometry, and
+hot loop are otherwise identical. A generated high-entropy lane/element hash
+also falls to 1.683 PFLOPS without any global load in the kernel loop. Thus the
+large gap is caused by switching activity driving the device power governor to
+reduce SCLK, not by a slower ISA path for VMEM-produced VGPRs.
+
+The documented bit 2 must not be enabled in the production GEMM without adding
+the ISA-required WMMA hazard spacing: doing so with the current expert schedule
+produces incorrect output. The existing bit-4 helper is therefore left
+unchanged until its callers emit the required dependency delays.
+
+The accurate interpretation is:
+
+- **about 4.3 PFLOPS** is the nominal-clock WMMA issue roof for low-activity
+  operands
+- **about 1.55--1.60 PFLOPS** is the sustained, power-limited roof for fully
+  random BF16 data under the current automatic clock/power policy
+- neither number alone is an architecture-independent WMMA throughput limit
 
 ## ISA comparison
 
@@ -154,9 +191,9 @@ The minimal reproduction exposes the instruction-fetch cliff directly:
 | 6,144 | 98,304 | 0.7795 |
 
 The original 1.559-PFLOPS hybrid diagnostic mixed fixed kernel costs and static
-ISA expansion, so it was not a clean roof measurement. Nevertheless, the new
-compact dynamic-source reproduction independently converges to the same
-1.54--1.57-PFLOPS plateau. This shows that exact BF16 GEMM is constrained first
-by dynamic WMMA operand delivery/register scheduling, before LDS traffic is
-added; the 60% target cannot be justified from the constant-source 4.3-PFLOPS
-number.
+ISA expansion, so it was not a clean roof measurement. The compact
+dynamic-source reproduction converges to the same 1.54--1.57-PFLOPS plateau,
+but the clock/power controls above show this is a high-activity DVFS limit, not
+dynamic WMMA operand-delivery latency. Constant-source 4.3-PFLOPS remains an
+unsuitable target for random-data GEMM because it runs at a radically different
+SCLK and power operating point.

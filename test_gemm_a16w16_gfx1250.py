@@ -12,12 +12,34 @@ gemm_a16w16 = gemm_module.gemm_a16w16
 _gemm_producer_consumer = gemm_module._gemm_producer_consumer
 
 
-pytestmark = pytest.mark.skipif(
+_requires_gfx1250 = pytest.mark.skipif(
     not torch.cuda.is_available() or not str(get_rocm_arch() or "").startswith("gfx1250"),
     reason="gfx1250 GPU is required",
 )
 
 
+@pytest.mark.parametrize(
+    "shape,in_dtype,out_dtype,expected",
+    [
+        ((128, 2048, 4096), torch.bfloat16, torch.bfloat16, "all_compute_8w"),
+        ((512, 2048, 7168), torch.bfloat16, torch.bfloat16, "all_compute_8w"),
+        ((2048, 1024, 7168), torch.bfloat16, torch.bfloat16, "all_compute_8w"),
+        ((4096, 256, 64), torch.bfloat16, torch.bfloat16, "direct_b"),
+        ((16, 257, 320), torch.bfloat16, torch.bfloat16, "producer_consumer"),
+        ((128, 2048, 4096), torch.float16, torch.float16, "producer_consumer"),
+        ((128, 2048, 4096), torch.bfloat16, torch.float32, "producer_consumer"),
+        ((4096, 255, 64), torch.bfloat16, torch.bfloat16, "producer_consumer"),
+        ((4096, 256, 63), torch.bfloat16, torch.bfloat16, "producer_consumer"),
+    ],
+)
+def test_select_production_route(shape, in_dtype, out_dtype, expected):
+    assert (
+        gemm_module._select_production_route(*shape, in_dtype, out_dtype)
+        == expected
+    )
+
+
+@_requires_gfx1250
 def test_auto_direct_b_path():
     torch.manual_seed(7)
     a = torch.randn((4096, 64), device="cuda", dtype=torch.bfloat16)
@@ -29,6 +51,26 @@ def test_auto_direct_b_path():
     torch.testing.assert_close(actual, expected, atol=0.2, rtol=0.02)
 
 
+@_requires_gfx1250
+@pytest.mark.parametrize(
+    "m,n,k",
+    [
+        (128, 2048, 4096),
+        (512, 2048, 7168),
+    ],
+)
+def test_auto_all_compute_shapes(m, n, k):
+    torch.manual_seed(11)
+    a = torch.randn((m, k), device="cuda", dtype=torch.bfloat16)
+    b = torch.randn((n, k), device="cuda", dtype=torch.bfloat16)
+
+    actual = gemm_a16w16(a, b)
+    expected = a @ b.T
+
+    torch.testing.assert_close(actual, expected, atol=0.2, rtol=0.02)
+
+
+@_requires_gfx1250
 @pytest.mark.parametrize(
     "in_dtype,out_dtype",
     [
@@ -48,6 +90,7 @@ def test_aligned_tile(in_dtype, out_dtype):
     torch.testing.assert_close(actual, expected, atol=0.2, rtol=0.02)
 
 
+@_requires_gfx1250
 @pytest.mark.parametrize("in_dtype", [torch.float16, torch.bfloat16])
 @pytest.mark.parametrize(
     "a_transposed,b_transposed",
@@ -84,6 +127,7 @@ def test_padding_and_noncontiguous_inputs(
     torch.testing.assert_close(actual, expected, atol=0.2, rtol=0.02)
 
 
+@_requires_gfx1250
 def test_runtime_m_output_guard():
     torch.manual_seed(8)
     m, n, k = 65, 128, 256
@@ -113,6 +157,7 @@ def test_runtime_m_output_guard():
     assert torch.all(parent[m:] == sentinel)
 
 
+@_requires_gfx1250
 def test_runtime_m_reuses_compiled_module():
     gemm_module._cached_module.cache_clear()
     common = {
@@ -137,6 +182,7 @@ def test_runtime_m_reuses_compiled_module():
     assert info1.hits == info0.hits + 1
 
 
+@_requires_gfx1250
 def test_compiler_tuning_options():
     torch.manual_seed(9)
     a = torch.randn((128, 512), device="cuda", dtype=torch.bfloat16)
@@ -154,6 +200,7 @@ def test_compiler_tuning_options():
     torch.testing.assert_close(actual, a @ b.T, atol=0.2, rtol=0.02)
 
 
+@_requires_gfx1250
 def test_preallocated_output():
     torch.manual_seed(2)
     a = torch.randn((128, 128), device="cuda", dtype=torch.bfloat16)
@@ -166,6 +213,7 @@ def test_preallocated_output():
     torch.testing.assert_close(actual, a @ b.T, atol=0.2, rtol=0.02)
 
 
+@_requires_gfx1250
 @pytest.mark.parametrize("num_stages", [2, 3])
 def test_pipeline_stages(num_stages):
     torch.manual_seed(4)
@@ -177,6 +225,7 @@ def test_pipeline_stages(num_stages):
     torch.testing.assert_close(actual, a @ b.T, atol=0.2, rtol=0.02)
 
 
+@_requires_gfx1250
 @pytest.mark.parametrize("m,n", [(16, 257), (257, 16), (32, 32)])
 def test_small_dimension_policy(m, n):
     torch.manual_seed(3)

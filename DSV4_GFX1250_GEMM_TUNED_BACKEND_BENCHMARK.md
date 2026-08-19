@@ -181,10 +181,12 @@ Across all eight shapes, PR #875 is 17.1% slower by kernel-time geomean and
 
 ## Consolidated production A16W16
 
-GPU3 results from 2026-08-17:
+GPU3 results from 2026-08-17/18:
 
 | Shape | Production kernel us | Production TFLOPS | Comparison baseline | Baseline us | Baseline TFLOPS | Correctness |
 |---|---:|---:|---|---:|---:|---|
+| (128,2048,4096) | **16.4430** | **130.602** | same-session producer/consumer | 27.0000 | 79.536 | passed |
+| (512,2048,7168) | **29.6630** | **506.772** | same-session producer/consumer | 45.6270 | 329.463 | passed |
 | (2048,1024,7168) | **37.0145** | **812.243** | same-process baseline | 48.91 | 614.66 | passed bit-exact |
 | (4096,2048,4096) | **77.8600** | **882.603** | same-session producer/consumer | 84.5455 | 812.811 | passed bit-exact |
 | (16384,2048,4096) | **285.1405** | **964.009** | same-session producer/consumer | 330.6135 | 831.418 | passed bit-exact |
@@ -195,8 +197,21 @@ production file.
 
 | Route | Path | reg MxNxK | waves MxN | buffers | swizzle | XCD remap |
 |---|---|---|---|---:|---:|---|
-| exact `(2048,1024,7168)` | all-compute | 2x4x4 | 4x2 | 3 | 32 | — |
+| exact M=128/512/2048 production shapes | all-compute | 2x4x4 | 4x2 | 3 | 32 | — |
 | aligned `M >= 4096` | A-LDS/direct-B | 8x4x2 | 1x4 | 3 | 8 | enabled |
+
+### Current small-shape kernel comparison
+
+| Shape | Production FlyDSL us | Opus PR #4246 us | Winner |
+|---|---:|---:|---|
+| (1,1024,4096) | 13.219 | **4.83** | Opus |
+| (32,64,7168) | 18.507 | **5.13** | Opus |
+| (128,2048,4096) | 16.443 | **11.48** | Opus |
+| (512,2048,7168) | **29.663** | 49.26 | FlyDSL |
+
+The production FlyDSL timings are the latest random-BF16 measurements; Opus
+values are from the full perf-set. Differences below approximately 5% remain
+within normal run-to-run noise.
 
 ## A8W8 tuned reference and reproduction
 

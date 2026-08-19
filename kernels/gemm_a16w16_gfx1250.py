@@ -1,12 +1,11 @@
 #!/usr/bin/env python3
 """Production FP16/BF16 GEMM routes for gfx1250.
 
-The operation computes ``C[M, N] = A[M, K] @ B[N, K].T``. BF16-to-BF16 calls
-automatically use the measured production route for supported shapes: the
-exact 2048x1024x7168 shape uses an eight-wave all-compute TDM/LDS kernel, while
-large aligned shapes use an A-LDS all-compute kernel with direct-B VGPR
-prefetch. Other input, output, and shape combinations use the wave-specialized
-producer/consumer kernel.
+The operation computes ``C[M, N] = A[M, K] @ B[N, K].T``. The
+producer/consumer strategy is the general fallback for small shapes, FP16,
+FP32 output, and boundary handling. BF16-to-BF16 calls use role-fused
+all-compute strategies only on measured production routes: eight waves for a
+small set of exact shapes, or direct-B for large aligned shapes.
 
 Thread/value ownership comes from the gfx1250 16x16x32 WMMA atom through
 FlyDSL's ``TiledMma`` and tiled-copy APIs. The producer/consumer route uses
@@ -46,8 +45,51 @@ KERNARG_PRELOAD_COUNT = 8
 SCHED_STRATEGIES = (None, "max-ilp", "max-memory-clause")
 _compiled_dispatch_lock = Lock()
 
+_ROUTE_PRODUCER_CONSUMER = "producer_consumer"
+_ROUTE_ALL_COMPUTE_8W = "all_compute_8w"
+_ROUTE_DIRECT_B = "direct_b"
 
-# Producer/consumer kernel
+_ALL_COMPUTE_8W_SHAPES = frozenset(
+    ((128, 2048, 4096), (512, 2048, 7168), (2048, 1024, 7168))
+)
+_ALL_COMPUTE_8W_CONFIG = dict(
+    reg_m=2,
+    reg_n=4,
+    reg_k=4,
+    waves_m=4,
+    waves_n=2,
+    num_buffers=3,
+)
+_DIRECT_B_CONFIG = dict(
+    reg_m=8,
+    reg_n=4,
+    reg_k=2,
+    waves_m=1,
+    waves_n=4,
+    num_buffers=3,
+    swizzle_m=8,
+    direct_b_global=True,
+    use_xcd_remap=True,
+)
+
+
+def _select_production_route(
+    m: int,
+    n: int,
+    k: int,
+    in_dtype: torch.dtype,
+    out_dtype: torch.dtype,
+) -> str:
+    if in_dtype != torch.bfloat16 or out_dtype != torch.bfloat16:
+        return _ROUTE_PRODUCER_CONSUMER
+    if (m, n, k) in _ALL_COMPUTE_8W_SHAPES:
+        return _ROUTE_ALL_COMPUTE_8W
+    if m >= 4096 and n % 256 == 0 and k % 64 == 0:
+        return _ROUTE_DIRECT_B
+    return _ROUTE_PRODUCER_CONSUMER
+
+
+# Producer/consumer: general boundary-safe fallback
 
 class _NamedBarrier:
     """One gfx1250 named-barrier target-extension global."""
@@ -770,7 +812,7 @@ def create_gemm_a16w16_module(
     return launch_gemm, block_m, block_n, block_k
 
 
-# All-compute kernel
+# Role-fused all-compute: tuned BF16 routes
 
 def _create_all_compute_module(
     M: int,
@@ -819,6 +861,8 @@ def _create_all_compute_module(
     elem_bytes = 2
     stage_a_bytes = block_m * lds_stride * elem_bytes
     stage_b_offset = (stage_a_bytes + 15) // 16 * 16
+    # Direct-B keeps this reservation as an occupancy throttle; removing the
+    # unused B region raises power pressure and regresses the large shape.
     stage_b_bytes = block_n * lds_stride * elem_bytes
     stage_pitch = (
         (stage_b_offset + stage_b_bytes + 1023) // 1024 * 1024
@@ -1384,11 +1428,11 @@ def _gemm_all_compute(
     swizzle_m: int = 32,
     direct_b_global: bool = False,
     use_xcd_remap: bool = False,
-    _validate_inputs: bool = True,
+    _skip_validation: bool = False,
 ) -> torch.Tensor:
     """Run a focused BF16 all-compute candidate."""
 
-    if _validate_inputs:
+    if not _skip_validation:
         m, n, k, _ = _validate_gemm_inputs(
             a,
             b,
@@ -1529,11 +1573,11 @@ def _gemm_producer_consumer(
     sched_strategy: str | None = None,
     main_loop_unroll: bool = False,
     out: torch.Tensor | None = None,
-    _validate_inputs: bool = True,
+    _skip_validation: bool = False,
 ) -> torch.Tensor:
     """Run the configurable producer/consumer route."""
 
-    if _validate_inputs:
+    if not _skip_validation:
         m, n, k, out_dtype = _validate_gemm_inputs(a, b, out_dtype, out)
     else:
         m, k = a.shape
@@ -1631,43 +1675,22 @@ def gemm_a16w16(
     """Compute ``a @ b.T`` with the measured production route."""
 
     m, n, k, out_dtype = _validate_gemm_inputs(a, b, out_dtype, out)
-    if a.dtype == torch.bfloat16 and out_dtype == torch.bfloat16:
-        if (m, n, k) == (2048, 1024, 7168):
-            return _gemm_all_compute(
-                a,
-                b,
-                out=out,
-                reg_m=2,
-                reg_n=4,
-                reg_k=4,
-                waves_m=4,
-                waves_n=2,
-                num_buffers=3,
-                _validate_inputs=False,
-            )
-        if m >= 4096 and n % 256 == 0 and k % 64 == 0:
-            return _gemm_all_compute(
-                a,
-                b,
-                out=out,
-                reg_m=8,
-                reg_n=4,
-                reg_k=2,
-                waves_m=1,
-                waves_n=4,
-                num_buffers=3,
-                swizzle_m=8,
-                direct_b_global=True,
-                use_xcd_remap=True,
-                _validate_inputs=False,
-            )
+    route = _select_production_route(m, n, k, a.dtype, out_dtype)
+    if route == _ROUTE_ALL_COMPUTE_8W:
+        return _gemm_all_compute(
+            a, b, out=out, _skip_validation=True, **_ALL_COMPUTE_8W_CONFIG
+        )
+    if route == _ROUTE_DIRECT_B:
+        return _gemm_all_compute(
+            a, b, out=out, _skip_validation=True, **_DIRECT_B_CONFIG
+        )
 
     return _gemm_producer_consumer(
         a,
         b,
         out_dtype=out_dtype,
         out=out,
-        _validate_inputs=False,
+        _skip_validation=True,
     )
 
 

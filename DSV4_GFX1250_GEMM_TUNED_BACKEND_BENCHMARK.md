@@ -200,6 +200,19 @@ production file.
 | exact M=128/512/2048 production shapes | all-compute | 2x4x4 | 4x2 | 3 | 32 | — |
 | aligned `M >= 4096` | A-LDS/direct-B | 8x4x2 | 1x4 | 3 | 8 | enabled |
 
+The current direct-B implementation uses a four-column register prefetch ring.
+Same-session comparison against the previous full-fragment double buffer:
+
+| Shape | Previous us | B-column ring us | Throughput gain |
+|---|---:|---:|---:|
+| (4096,2048,4096) | 107.245 | **99.243** | +8.1% |
+| (16384,2048,4096) | 339.239 | **311.149** | +9.0% |
+
+The final ISA uses 376 VGPRs instead of 427.
+An independent 2026-08-19 production run reached **1.102 PFLOPS** at M=4096
+and **0.886 PFLOPS** at M=16384; the different absolute operating points
+reinforce using same-session deltas for this power-limited kernel.
+
 ### Current small-shape kernel comparison
 
 | Shape | Production FlyDSL us | Opus PR #4246 us | Winner |

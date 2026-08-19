@@ -528,6 +528,23 @@ Direct-B still reserves the otherwise-unused B LDS region. Removing it reduces
 LDS from about 165 KiB to 58 KiB, admits more resident work, and regresses the
 large shape from about 0.99 to 0.74 PFLOPS under the power-limited operating
 point. The reservation therefore remains as an intentional occupancy throttle.
+
+The direct-B path now keeps four single-column B fragments instead of two full
+4-column fragments. After a column's eight WMMAs, its slot is refilled with the
+same column from the next K step while the other three columns compute. This
+preserves global traffic and prefetch distance while reducing final ISA VGPRs
+from 427 to 376 and `s_wait_loadcnt` instructions from 27 to 21. Alternating
+same-session measurements improve:
+
+- `(4096,2048,4096)`: 107.245 -> **99.243 us** (+8.1% throughput)
+- `(16384,2048,4096)`: median 339.239 -> **311.149 us** (+9.0% throughput)
+
+Two follow-up A-path experiments did not survive sustained testing. Explicit
+front/back A fragments were correct but regressed about 2%, confirming that
+LLVM's existing partial LDS waits were already better scheduled. Raising
+block-K from 64 to 128 briefly reached 0.92 PFLOPS, then power-throttled to
+about 0.71 PFLOPS in repeated runs. Neither change is retained.
+
 Quadrant, direct-AB, named-barrier, distributed-TDM, operand-reuse, diagonal,
 row-window, clustering, and scheduling-search branches were removed from the
 production implementation after failing to beat these paths.

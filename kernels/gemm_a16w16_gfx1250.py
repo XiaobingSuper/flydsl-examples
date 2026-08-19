@@ -1046,20 +1046,44 @@ def _create_all_compute_module(
                 _chunk_views(0, 0)[0]
             )
             direct_a_retile = thr_copy_a.retile(direct_a_frag)
-            direct_b_frag = [
-                thr_mma.make_fragment_B(_chunk_views(0, 0)[1])
-                for _ in range(2)
+            # Keep one B slot per N fragment. Each slot is refilled for the
+            # next K step after its current eight WMMAs have consumed it.
+            b_column_layout = fx.make_layout(
+                ((8, 2), 1, 1),
+                ((1, 8), 16, 0),
+            )
+            direct_b_columns = [
+                fx.make_fragment_like(
+                    b_column_layout,
+                    fx.BFloat16.ir_type,
+                )
+                for _ in range(reg_n)
             ]
-            direct_b_retile = [
+            direct_b_column_retile = [
                 thr_copy_b.retile(fragment)
-                for fragment in direct_b_frag
+                for fragment in direct_b_columns
+            ]
+            c_column_layout = fx.make_layout(
+                (8, reg_m, 1),
+                (1, 8, 0),
+            )
+            direct_c_columns = [
+                fx.make_fragment_like(
+                    c_column_layout,
+                    fx.Float32.ir_type,
+                )
+                for _ in range(reg_n)
             ]
         else:
             frag_a = thr_mma.make_fragment_A(_stage_views(0)[0])
             frag_b = thr_mma.make_fragment_B(_stage_views(0)[1])
             frag_a_retile = thr_copy_a.retile(frag_a)
             frag_b_retile = thr_copy_b.retile(frag_b)
-        frag_c.fill(0)
+        if const_expr(direct_b_global):
+            for column in direct_c_columns:
+                column.fill(0)
+        else:
+            frag_c.fill(0)
 
         def _pipeline_fence(outstanding):
             if const_expr(direct_b_global):
@@ -1095,27 +1119,28 @@ def _create_all_compute_module(
             p_a = thr_copy_a.partition_S(s_a)
 
             if const_expr(direct_b_global):
-                def _load_direct_b(source_tile, source_ki, buf):
+                def _load_direct_b_column(
+                    source_tile,
+                    source_ki,
+                    source_n,
+                ):
+                    p_b = thr_copy_b.partition_S(
+                        _global_b_chunk(source_tile, source_ki)
+                    )
                     fx.copy(
                         copy_atom,
-                        thr_copy_b.partition_S(
-                            _global_b_chunk(source_tile, source_ki)
-                        ),
-                        direct_b_retile[buf],
+                        p_b[None, source_n, None],
+                        direct_b_column_retile[source_n][
+                            None, 0, None
+                        ],
                     )
 
                 if logical_k == 0:
-                    _load_direct_b(0, 0, 0)
+                    for ni in range_constexpr(reg_n):
+                        _load_direct_b_column(0, 0, ni)
                 _wait_global_loads()
                 fx.rocdl.sched_barrier(0)
                 for ki in range_constexpr(k_iters):
-                    cur = ki % 2
-                    nxt = (cur + 1) % 2
-                    if const_expr(ki + 1 < k_iters):
-                        _load_direct_b(logical_k, ki + 1, nxt)
-                    else:
-                        if logical_k + 1 < num_k_tiles:
-                            _load_direct_b(logical_k + 1, 0, nxt)
                     c_a, _ = _chunk_views(stage, ki)
                     fx.copy(
                         copy_atom,
@@ -1123,9 +1148,30 @@ def _create_all_compute_module(
                         direct_a_retile,
                     )
                     fx.rocdl.s_wait_dscnt(0)
-                    _gemm(direct_a_frag, direct_b_frag[cur])
-                    if const_expr(ki + 1 < k_iters):
-                        _wait_global_loads()
+                    for ni in range_constexpr(reg_n):
+                        fx.gemm(
+                            tiled_mma,
+                            direct_c_columns[ni],
+                            direct_a_frag,
+                            direct_b_columns[ni],
+                            direct_c_columns[ni],
+                            traversal_order=(
+                                fx.GemmTraversalOrder.KMN
+                            ),
+                        )
+                        if const_expr(ki + 1 < k_iters):
+                            _load_direct_b_column(
+                                logical_k,
+                                ki + 1,
+                                ni,
+                            )
+                        else:
+                            if logical_k + 1 < num_k_tiles:
+                                _load_direct_b_column(
+                                    logical_k + 1,
+                                    0,
+                                    ni,
+                                )
             else:
                 p_b = thr_copy_b.partition_S(s_b)
                 fx.rocdl.sched_barrier(0)
@@ -1147,36 +1193,73 @@ def _create_all_compute_module(
                     )
 
             for _ in range_constexpr(k_iters):
-                fx.rocdl.sched_dsrd(2 * reg_n)
-                fx.rocdl.sched_dsrd(2 * reg_m)
-                for _ in range_constexpr(reg_m):
-                    fx.rocdl.sched_mfma(reg_n)
+                if const_expr(direct_b_global):
+                    fx.rocdl.sched_dsrd(2 * reg_m)
+                    for _ in range_constexpr(reg_n):
+                        fx.rocdl.sched_mfma(reg_m)
+                        fx.rocdl.sched_vmem(2)
+                else:
+                    fx.rocdl.sched_dsrd(2 * reg_n)
+                    fx.rocdl.sched_dsrd(2 * reg_m)
+                    for _ in range_constexpr(reg_m):
+                        fx.rocdl.sched_mfma(reg_n)
             fx.rocdl.sched_barrier(0)
 
         for stage in range_constexpr(num_buffers - 1):
             _issue(stage, stage)
 
         steady = num_k_tiles - (num_buffers - 1)
-        init = [frag_c.load()]
-        results = init
-        if const_expr(steady > 0):
-            for kt, state in range(0, steady, 1, init=init):
-                frag_c.store(state[0])
-                stage = kt % num_buffers
-                _pipeline_fence(num_buffers - 2)
-                _compute(
-                    stage,
-                    kt,
-                    kt + (num_buffers - 1),
-                )
-                results = yield [frag_c.load()]
-            frag_c.store(results)
+        if const_expr(direct_b_global):
+            init = [column.load() for column in direct_c_columns]
+            results = init
+            if const_expr(steady > 0):
+                for kt, state in range(0, steady, 1, init=init):
+                    for ni in range_constexpr(reg_n):
+                        direct_c_columns[ni].store(state[ni])
+                    stage = kt % num_buffers
+                    _pipeline_fence(num_buffers - 2)
+                    _compute(
+                        stage,
+                        kt,
+                        kt + (num_buffers - 1),
+                    )
+                    results = yield [
+                        column.load() for column in direct_c_columns
+                    ]
+                for ni in range_constexpr(reg_n):
+                    direct_c_columns[ni].store(results[ni])
 
-        for j in range_constexpr(num_buffers - 1):
-            logical_k = steady + j
-            stage = logical_k % num_buffers
-            _pipeline_fence(num_buffers - 2 - j)
-            _compute(stage, logical_k, None)
+            for j in range_constexpr(num_buffers - 1):
+                logical_k = steady + j
+                stage = logical_k % num_buffers
+                _pipeline_fence(num_buffers - 2 - j)
+                _compute(stage, logical_k, None)
+
+            for ni in range_constexpr(reg_n):
+                frag_c[None, None, ni].store(
+                    direct_c_columns[ni].load()
+                )
+        else:
+            init = [frag_c.load()]
+            results = init
+            if const_expr(steady > 0):
+                for kt, state in range(0, steady, 1, init=init):
+                    frag_c.store(state[0])
+                    stage = kt % num_buffers
+                    _pipeline_fence(num_buffers - 2)
+                    _compute(
+                        stage,
+                        kt,
+                        kt + (num_buffers - 1),
+                    )
+                    results = yield [frag_c.load()]
+                frag_c.store(results)
+
+            for j in range_constexpr(num_buffers - 1):
+                logical_k = steady + j
+                stage = logical_k % num_buffers
+                _pipeline_fence(num_buffers - 2 - j)
+                _compute(stage, logical_k, None)
 
         copy_out = fx.make_copy_atom(
             fx.rocdl.BufferCopy(16),

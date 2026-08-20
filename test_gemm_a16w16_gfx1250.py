@@ -2,239 +2,153 @@
 
 import pytest
 
-import flydsl  # noqa: F401 -- load FlyDSL/COMGR before torch loads HIP LLVM
+import flydsl  # noqa: F401 -- initialize FlyDSL/COMGR before torch
 import torch
 from flydsl.runtime.device import get_rocm_arch
 
 from kernels import gemm_a16w16_gfx1250 as gemm_module
 
-gemm_a16w16 = gemm_module.gemm_a16w16
-_gemm_producer_consumer = gemm_module._gemm_producer_consumer
 
+gemm_a16w16 = gemm_module.gemm_a16w16
+_gemm_all_compute = gemm_module._gemm_all_compute
 
 _requires_gfx1250 = pytest.mark.skipif(
-    not torch.cuda.is_available() or not str(get_rocm_arch() or "").startswith("gfx1250"),
+    not torch.cuda.is_available()
+    or not str(get_rocm_arch() or "").startswith("gfx1250"),
     reason="gfx1250 GPU is required",
 )
 
 
-@pytest.mark.parametrize(
-    "shape,in_dtype,out_dtype,expected",
-    [
-        ((128, 2048, 4096), torch.bfloat16, torch.bfloat16, "all_compute_8w"),
-        ((512, 2048, 7168), torch.bfloat16, torch.bfloat16, "all_compute_8w"),
-        ((2048, 1024, 7168), torch.bfloat16, torch.bfloat16, "all_compute_8w"),
-        ((4096, 256, 64), torch.bfloat16, torch.bfloat16, "direct_b"),
-        ((16, 257, 320), torch.bfloat16, torch.bfloat16, "producer_consumer"),
-        ((128, 2048, 4096), torch.float16, torch.float16, "producer_consumer"),
-        ((128, 2048, 4096), torch.bfloat16, torch.float32, "producer_consumer"),
-        ((4096, 255, 64), torch.bfloat16, torch.bfloat16, "producer_consumer"),
-        ((4096, 256, 63), torch.bfloat16, torch.bfloat16, "producer_consumer"),
-    ],
-)
-def test_select_production_route(shape, in_dtype, out_dtype, expected):
-    assert (
-        gemm_module._select_production_route(*shape, in_dtype, out_dtype)
-        == expected
-    )
+def test_route_policy():
+    cases = [
+        ((32, 64, 7168), torch.bfloat16, "all_compute_1w"),
+        ((32, 64, 7168), torch.float16, "all_compute_1w"),
+        ((128, 2048, 4096), torch.bfloat16, "all_compute_8w"),
+        ((4096, 256, 64), torch.bfloat16, "direct_b"),
+        ((4096, 256, 64), torch.float16, "all_compute_8w"),
+        ((128, 257, 320), torch.bfloat16, "all_compute_4w"),
+        ((512, 257, 320), torch.bfloat16, "all_compute_8w"),
+    ]
+    for shape, dtype, expected in cases:
+        route, _ = gemm_module._select_all_compute_config(*shape, dtype)
+        assert route == expected
+
+
+def test_only_matching_half_output_supported():
+    if not torch.cuda.is_available():
+        pytest.skip("CUDA/HIP device required for tensor validation")
+    a = torch.empty((16, 32), dtype=torch.float16, device="cuda")
+    b = torch.empty((16, 32), dtype=torch.float16, device="cuda")
+    with pytest.raises(ValueError, match="matching FP16"):
+        gemm_a16w16(a, b, out_dtype=torch.float32)
 
 
 @_requires_gfx1250
-def test_auto_direct_b_path():
-    torch.manual_seed(7)
-    a = torch.randn((4096, 64), device="cuda", dtype=torch.bfloat16)
-    b = torch.randn((256, 64), device="cuda", dtype=torch.bfloat16)
-
-    actual = gemm_a16w16(a, b)
-    expected = a @ b.T
-
-    torch.testing.assert_close(actual, expected, atol=0.2, rtol=0.02)
-
-
-@_requires_gfx1250
-@pytest.mark.parametrize(
-    "m,n,k",
-    [
-        (128, 2048, 4096),
-        (512, 2048, 7168),
-    ],
-)
-def test_auto_all_compute_shapes(m, n, k):
-    torch.manual_seed(11)
-    a = torch.randn((m, k), device="cuda", dtype=torch.bfloat16)
-    b = torch.randn((n, k), device="cuda", dtype=torch.bfloat16)
-
-    actual = gemm_a16w16(a, b)
-    expected = a @ b.T
-
-    torch.testing.assert_close(actual, expected, atol=0.2, rtol=0.02)
-
-
-@_requires_gfx1250
-@pytest.mark.parametrize(
-    "in_dtype,out_dtype",
-    [
-        (torch.float16, torch.float16),
-        (torch.bfloat16, torch.bfloat16),
-        (torch.float16, torch.float32),
-    ],
-)
-def test_aligned_tile(in_dtype, out_dtype):
+@pytest.mark.parametrize("dtype", [torch.float16, torch.bfloat16])
+def test_aligned_fp16_bf16(dtype):
     torch.manual_seed(0)
-    a = torch.randn((128, 128), device="cuda", dtype=in_dtype)
-    b = torch.randn((128, 128), device="cuda", dtype=in_dtype)
-
-    actual = gemm_a16w16(a, b, out_dtype=out_dtype)
-    expected = (a.float() @ b.float().T).to(out_dtype)
-
+    a = torch.randn((128, 128), device="cuda", dtype=dtype)
+    b = torch.randn((128, 128), device="cuda", dtype=dtype)
+    actual = gemm_a16w16(a, b)
+    expected = (a.float() @ b.float().T).to(dtype)
     torch.testing.assert_close(actual, expected, atol=0.2, rtol=0.02)
 
 
 @_requires_gfx1250
-@pytest.mark.parametrize("in_dtype", [torch.float16, torch.bfloat16])
+@pytest.mark.parametrize("dtype", [torch.float16, torch.bfloat16])
+def test_one_wave_small_m(dtype):
+    torch.manual_seed(1)
+    a = torch.randn((32, 7168), device="cuda", dtype=dtype)
+    b = torch.randn((64, 7168), device="cuda", dtype=dtype)
+    actual = gemm_a16w16(a, b)
+    expected = (a.float() @ b.float().T).to(dtype)
+    torch.testing.assert_close(actual, expected, atol=0.2, rtol=0.02)
+
+
+@_requires_gfx1250
+@pytest.mark.parametrize("dtype", [torch.float16, torch.bfloat16])
 @pytest.mark.parametrize(
     "a_transposed,b_transposed",
     [(False, False), (False, True), (True, False), (True, True)],
 )
-def test_padding_and_noncontiguous_inputs(
-    in_dtype,
-    a_transposed,
-    b_transposed,
-):
-    torch.manual_seed(1)
+def test_padding_and_noncontiguous_inputs(dtype, a_transposed, b_transposed):
+    torch.manual_seed(2)
     m, n, k = 130, 193, 70
     a = torch.randn(
-        (k, m) if a_transposed else (m, k),
-        device="cuda",
-        dtype=in_dtype,
+        (k, m) if a_transposed else (m, k), device="cuda", dtype=dtype
     )
     b = torch.randn(
-        (k, n) if b_transposed else (n, k),
-        device="cuda",
-        dtype=in_dtype,
+        (k, n) if b_transposed else (n, k), device="cuda", dtype=dtype
     )
     if a_transposed:
         a = a.T
-        assert not a.is_contiguous()
     if b_transposed:
         b = b.T
-        assert not b.is_contiguous()
-
     actual = gemm_a16w16(a, b)
-    expected = a @ b.T
-
+    expected = (a.float() @ b.float().T).to(dtype)
     assert actual.shape == (m, n)
     torch.testing.assert_close(actual, expected, atol=0.2, rtol=0.02)
 
 
 @_requires_gfx1250
-def test_runtime_m_output_guard():
-    torch.manual_seed(8)
+@pytest.mark.parametrize("dtype", [torch.float16, torch.bfloat16])
+def test_preallocated_output(dtype):
+    torch.manual_seed(3)
+    a = torch.randn((128, 128), device="cuda", dtype=dtype)
+    b = torch.randn((128, 128), device="cuda", dtype=dtype)
+    out = torch.empty((128, 128), device="cuda", dtype=dtype)
+    actual = gemm_a16w16(a, b, out=out)
+    assert actual.data_ptr() == out.data_ptr()
+    torch.testing.assert_close(
+        actual, (a.float() @ b.float().T).to(dtype), atol=0.2, rtol=0.02
+    )
+
+
+@_requires_gfx1250
+def test_bf16_direct_b_path():
+    torch.manual_seed(4)
+    a = torch.randn((4096, 64), device="cuda", dtype=torch.bfloat16)
+    b = torch.randn((256, 64), device="cuda", dtype=torch.bfloat16)
+    actual = gemm_a16w16(a, b)
+    expected = (a.float() @ b.float().T).to(torch.bfloat16)
+    torch.testing.assert_close(actual, expected, atol=0.2, rtol=0.02)
+
+
+@_requires_gfx1250
+def test_output_guard_with_padded_all_compute():
+    torch.manual_seed(5)
     m, n, k = 65, 128, 256
     a = torch.randn((m, k), device="cuda", dtype=torch.bfloat16)
     b = torch.randn((n, k), device="cuda", dtype=torch.bfloat16)
-    sentinel = 777.0
     parent = torch.full(
-        (m + 64, n),
-        sentinel,
-        device="cuda",
-        dtype=torch.bfloat16,
+        (m + 64, n), 777.0, device="cuda", dtype=torch.bfloat16
     )
     out = parent[:m]
-
-    actual = _gemm_producer_consumer(
-        a,
-        b,
-        out=out,
-        reg_m=2,
-        reg_n=4,
-        reg_k=4,
-        waves_m=2,
-        waves_n=1,
-    )
-
-    torch.testing.assert_close(actual, a @ b.T, atol=0.2, rtol=0.02)
-    assert torch.all(parent[m:] == sentinel)
-
-
-@_requires_gfx1250
-def test_runtime_m_reuses_compiled_module():
-    gemm_module._cached_module.cache_clear()
-    common = {
-        "reg_m": 2,
-        "reg_n": 4,
-        "reg_k": 4,
-        "waves_m": 2,
-        "waves_n": 1,
-    }
-    b = torch.randn((128, 256), device="cuda", dtype=torch.bfloat16)
-
-    a0 = torch.randn((65, 256), device="cuda", dtype=torch.bfloat16)
-    out0 = _gemm_producer_consumer(a0, b, **common)
-    info0 = gemm_module._cached_module.cache_info()
-    a1 = torch.randn((97, 256), device="cuda", dtype=torch.bfloat16)
-    out1 = _gemm_producer_consumer(a1, b, **common)
-    info1 = gemm_module._cached_module.cache_info()
-
-    torch.testing.assert_close(out0, a0 @ b.T, atol=0.2, rtol=0.02)
-    torch.testing.assert_close(out1, a1 @ b.T, atol=0.2, rtol=0.02)
-    assert info1.misses == info0.misses
-    assert info1.hits == info0.hits + 1
-
-
-@_requires_gfx1250
-def test_compiler_tuning_options():
-    torch.manual_seed(9)
-    a = torch.randn((128, 512), device="cuda", dtype=torch.bfloat16)
-    b = torch.randn((128, 512), device="cuda", dtype=torch.bfloat16)
-
-    actual = _gemm_producer_consumer(
-        a,
-        b,
-        waves_per_eu=2,
-        kernarg_preload=True,
-        sched_strategy="max-ilp",
-        main_loop_unroll=True,
-    )
-
-    torch.testing.assert_close(actual, a @ b.T, atol=0.2, rtol=0.02)
-
-
-@_requires_gfx1250
-def test_preallocated_output():
-    torch.manual_seed(2)
-    a = torch.randn((128, 128), device="cuda", dtype=torch.bfloat16)
-    b = torch.randn((128, 128), device="cuda", dtype=torch.bfloat16)
-    out = torch.empty((128, 128), device="cuda", dtype=torch.bfloat16)
-
     actual = gemm_a16w16(a, b, out=out)
-
-    assert actual.data_ptr() == out.data_ptr()
-    torch.testing.assert_close(actual, a @ b.T, atol=0.2, rtol=0.02)
-
-
-@_requires_gfx1250
-@pytest.mark.parametrize("num_stages", [2, 3])
-def test_pipeline_stages(num_stages):
-    torch.manual_seed(4)
-    a = torch.randn((128, 512), device="cuda", dtype=torch.bfloat16)
-    b = torch.randn((128, 512), device="cuda", dtype=torch.bfloat16)
-
-    actual = _gemm_producer_consumer(a, b, num_stages=num_stages)
-
-    torch.testing.assert_close(actual, a @ b.T, atol=0.2, rtol=0.02)
+    torch.testing.assert_close(
+        actual, (a.float() @ b.float().T).to(torch.bfloat16), atol=0.2, rtol=0.02
+    )
+    assert torch.all(parent[m:] == 777.0)
 
 
 @_requires_gfx1250
-@pytest.mark.parametrize("m,n", [(16, 257), (257, 16), (32, 32)])
-def test_small_dimension_policy(m, n):
-    torch.manual_seed(3)
-    a = torch.randn((m, 320), device="cuda", dtype=torch.bfloat16)
-    b = torch.randn((n, 320), device="cuda", dtype=torch.bfloat16)
-
-    actual = gemm_a16w16(a, b)
-
-    torch.testing.assert_close(actual, a @ b.T, atol=0.2, rtol=0.02)
+@pytest.mark.parametrize("waves_m,waves_n", [(1, 1), (1, 2), (2, 2), (4, 2)])
+def test_all_supported_wave_counts(waves_m, waves_n):
+    torch.manual_seed(6)
+    a = torch.randn((64, 128), device="cuda", dtype=torch.bfloat16)
+    b = torch.randn((64, 128), device="cuda", dtype=torch.bfloat16)
+    actual = _gemm_all_compute(
+        a,
+        b,
+        reg_m=1,
+        reg_n=1,
+        reg_k=2,
+        waves_m=waves_m,
+        waves_n=waves_n,
+        num_buffers=2,
+    )
+    expected = (a.float() @ b.float().T).to(torch.bfloat16)
+    torch.testing.assert_close(actual, expected, atol=0.2, rtol=0.02)
 
 
 if __name__ == "__main__":

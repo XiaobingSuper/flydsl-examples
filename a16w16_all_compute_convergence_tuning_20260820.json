@@ -1,0 +1,3200 @@
+{
+  "results": [
+    {
+      "M": 32,
+      "N": 64,
+      "K": 7168,
+      "final": {
+        "config": {
+          "route": "all_compute",
+          "reg_m": 1,
+          "reg_n": 1,
+          "reg_k": 8,
+          "waves_m": 1,
+          "waves_n": 1,
+          "num_buffers": 3,
+          "swizzle_m": 32,
+          "direct_b_global": false,
+          "use_xcd_remap": false,
+          "main_loop_unroll": true
+        },
+        "error": {
+          "passed": true,
+          "max_abs": 0.03125,
+          "rel_l2": 8.164757665527386e-06,
+          "message": ""
+        },
+        "e2e_us": 14.309399574995041,
+        "min_us": 14.10910040140152,
+        "max_us": 15.707500278949738,
+        "tflops": 2.0518071248290077
+      },
+      "trials": [
+        {
+          "config": {
+            "route": "production"
+          },
+          "phase": "allcompute",
+          "error": {
+            "passed": true,
+            "max_abs": 0.03125,
+            "rel_l2": 8.164757665527386e-06
+          },
+          "tune_e2e_us": 17.49819964170456,
+          "tune_min_us": 16.705000400543213,
+          "tune_max_us": 19.284799695014954,
+          "status": "ok",
+          "wall_seconds": 1.0413317680358887
+        },
+        {
+          "config": {
+            "route": "all_compute",
+            "reg_m": 1,
+            "reg_n": 1,
+            "reg_k": 4,
+            "waves_m": 1,
+            "waves_n": 1,
+            "num_buffers": 2,
+            "swizzle_m": 32,
+            "direct_b_global": false,
+            "use_xcd_remap": false
+          },
+          "phase": "allcompute",
+          "error": {
+            "passed": true,
+            "max_abs": 0.03125,
+            "rel_l2": 8.164757665527386e-06
+          },
+          "tune_e2e_us": 35.965800285339355,
+          "tune_min_us": 35.589200258255005,
+          "tune_max_us": 37.30379939079285,
+          "status": "ok",
+          "wall_seconds": 0.30748486518859863
+        },
+        {
+          "config": {
+            "route": "all_compute",
+            "reg_m": 1,
+            "reg_n": 1,
+            "reg_k": 4,
+            "waves_m": 1,
+            "waves_n": 1,
+            "num_buffers": 2,
+            "swizzle_m": 32,
+            "direct_b_global": false,
+            "use_xcd_remap": false,
+            "main_loop_unroll": true
+          },
+          "phase": "allcompute",
+          "error": {
+            "passed": true,
+            "max_abs": 0.03125,
+            "rel_l2": 8.164757665527386e-06
+          },
+          "tune_e2e_us": 36.03000044822693,
+          "tune_min_us": 35.765400528907776,
+          "tune_max_us": 36.95119917392731,
+          "status": "ok",
+          "wall_seconds": 0.30689311027526855
+        },
+        {
+          "config": {
+            "route": "all_compute",
+            "reg_m": 1,
+            "reg_n": 1,
+            "reg_k": 4,
+            "waves_m": 1,
+            "waves_n": 1,
+            "num_buffers": 3,
+            "swizzle_m": 32,
+            "direct_b_global": false,
+            "use_xcd_remap": false
+          },
+          "phase": "allcompute",
+          "error": {
+            "passed": true,
+            "max_abs": 0.03125,
+            "rel_l2": 8.164757665527386e-06
+          },
+          "tune_e2e_us": 21.351799368858337,
+          "tune_min_us": 21.119600534439087,
+          "tune_max_us": 22.193199396133423,
+          "status": "ok",
+          "wall_seconds": 0.3746459484100342
+        },
+        {
+          "config": {
+            "route": "all_compute",
+            "reg_m": 1,
+            "reg_n": 1,
+            "reg_k": 4,
+            "waves_m": 1,
+            "waves_n": 1,
+            "num_buffers": 3,
+            "swizzle_m": 32,
+            "direct_b_global": false,
+            "use_xcd_remap": false,
+            "main_loop_unroll": true
+          },
+          "phase": "allcompute",
+          "error": {
+            "passed": true,
+            "max_abs": 0.03125,
+            "rel_l2": 8.164757665527386e-06
+          },
+          "tune_e2e_us": 21.632400155067444,
+          "tune_min_us": 21.31980061531067,
+          "tune_max_us": 22.409600019454956,
+          "status": "ok",
+          "wall_seconds": 0.37730860710144043
+        },
+        {
+          "config": {
+            "route": "all_compute",
+            "reg_m": 1,
+            "reg_n": 1,
+            "reg_k": 4,
+            "waves_m": 1,
+            "waves_n": 1,
+            "num_buffers": 4,
+            "swizzle_m": 32,
+            "direct_b_global": false,
+            "use_xcd_remap": false
+          },
+          "phase": "allcompute",
+          "error": {
+            "passed": true,
+            "max_abs": 0.03125,
+            "rel_l2": 8.164757665527386e-06
+          },
+          "tune_e2e_us": 17.37000048160553,
+          "tune_min_us": 16.985400021076202,
+          "tune_max_us": 18.996399641036987,
+          "status": "ok",
+          "wall_seconds": 0.44403719902038574
+        },
+        {
+          "config": {
+            "route": "all_compute",
+            "reg_m": 1,
+            "reg_n": 1,
+            "reg_k": 4,
+            "waves_m": 1,
+            "waves_n": 1,
+            "num_buffers": 4,
+            "swizzle_m": 32,
+            "direct_b_global": false,
+            "use_xcd_remap": false,
+            "main_loop_unroll": true
+          },
+          "phase": "allcompute",
+          "error": {
+            "passed": true,
+            "max_abs": 0.03125,
+            "rel_l2": 8.164757665527386e-06
+          },
+          "tune_e2e_us": 16.857199370861053,
+          "tune_min_us": 16.376399993896484,
+          "tune_max_us": 18.05099993944168,
+          "status": "ok",
+          "wall_seconds": 0.4441192150115967
+        },
+        {
+          "config": {
+            "route": "all_compute",
+            "reg_m": 1,
+            "reg_n": 1,
+            "reg_k": 8,
+            "waves_m": 1,
+            "waves_n": 1,
+            "num_buffers": 2,
+            "swizzle_m": 32,
+            "direct_b_global": false,
+            "use_xcd_remap": false
+          },
+          "phase": "allcompute",
+          "error": {
+            "passed": true,
+            "max_abs": 0.03125,
+            "rel_l2": 8.164757665527386e-06
+          },
+          "tune_e2e_us": 22.825999557971954,
+          "tune_min_us": 22.361600399017334,
+          "tune_max_us": 23.94779920578003,
+          "status": "ok",
+          "wall_seconds": 0.41645169258117676
+        },
+        {
+          "config": {
+            "route": "all_compute",
+            "reg_m": 1,
+            "reg_n": 1,
+            "reg_k": 8,
+            "waves_m": 1,
+            "waves_n": 1,
+            "num_buffers": 2,
+            "swizzle_m": 32,
+            "direct_b_global": false,
+            "use_xcd_remap": false,
+            "main_loop_unroll": true
+          },
+          "phase": "allcompute",
+          "error": {
+            "passed": true,
+            "max_abs": 0.03125,
+            "rel_l2": 8.164757665527386e-06
+          },
+          "tune_e2e_us": 22.657999396324158,
+          "tune_min_us": 22.22519963979721,
+          "tune_max_us": 23.907800018787384,
+          "status": "ok",
+          "wall_seconds": 0.4161214828491211
+        },
+        {
+          "config": {
+            "route": "all_compute",
+            "reg_m": 1,
+            "reg_n": 1,
+            "reg_k": 8,
+            "waves_m": 1,
+            "waves_n": 1,
+            "num_buffers": 3,
+            "swizzle_m": 32,
+            "direct_b_global": false,
+            "use_xcd_remap": false
+          },
+          "phase": "allcompute",
+          "error": {
+            "passed": true,
+            "max_abs": 0.03125,
+            "rel_l2": 8.164757665527386e-06
+          },
+          "tune_e2e_us": 17.08959937095642,
+          "tune_min_us": 16.64080023765564,
+          "tune_max_us": 18.419399857521057,
+          "status": "ok",
+          "wall_seconds": 0.5348563194274902
+        },
+        {
+          "config": {
+            "route": "all_compute",
+            "reg_m": 1,
+            "reg_n": 1,
+            "reg_k": 8,
+            "waves_m": 1,
+            "waves_n": 1,
+            "num_buffers": 3,
+            "swizzle_m": 32,
+            "direct_b_global": false,
+            "use_xcd_remap": false,
+            "main_loop_unroll": true
+          },
+          "phase": "allcompute",
+          "error": {
+            "passed": true,
+            "max_abs": 0.03125,
+            "rel_l2": 8.164757665527386e-06
+          },
+          "tune_e2e_us": 15.87979942560196,
+          "tune_min_us": 15.719600021839142,
+          "tune_max_us": 17.377999424934387,
+          "status": "ok",
+          "wall_seconds": 0.0010280609130859375
+        },
+        {
+          "config": {
+            "route": "all_compute",
+            "reg_m": 1,
+            "reg_n": 1,
+            "reg_k": 8,
+            "waves_m": 1,
+            "waves_n": 1,
+            "num_buffers": 4,
+            "swizzle_m": 32,
+            "direct_b_global": false,
+            "use_xcd_remap": false
+          },
+          "phase": "allcompute",
+          "error": {
+            "passed": true,
+            "max_abs": 0.03125,
+            "rel_l2": 8.164757665527386e-06
+          },
+          "tune_e2e_us": 16.528800129890442,
+          "tune_min_us": 16.25639945268631,
+          "tune_max_us": 17.87479966878891,
+          "status": "ok",
+          "wall_seconds": 0.6552469730377197
+        },
+        {
+          "config": {
+            "route": "all_compute",
+            "reg_m": 1,
+            "reg_n": 1,
+            "reg_k": 8,
+            "waves_m": 1,
+            "waves_n": 1,
+            "num_buffers": 4,
+            "swizzle_m": 32,
+            "direct_b_global": false,
+            "use_xcd_remap": false,
+            "main_loop_unroll": true
+          },
+          "phase": "allcompute",
+          "error": {
+            "passed": true,
+            "max_abs": 0.03125,
+            "rel_l2": 8.164757665527386e-06
+          },
+          "tune_e2e_us": 16.624799370765686,
+          "tune_min_us": 16.2321999669075,
+          "tune_max_us": 17.169800400733948,
+          "status": "ok",
+          "wall_seconds": 0.6520645618438721
+        },
+        {
+          "config": {
+            "route": "all_compute",
+            "reg_m": 1,
+            "reg_n": 2,
+            "reg_k": 4,
+            "waves_m": 1,
+            "waves_n": 1,
+            "num_buffers": 2,
+            "swizzle_m": 32,
+            "direct_b_global": false,
+            "use_xcd_remap": false
+          },
+          "phase": "allcompute",
+          "error": {
+            "passed": true,
+            "max_abs": 0.03125,
+            "rel_l2": 8.164757665527386e-06
+          },
+          "tune_e2e_us": 38.47360014915466,
+          "tune_min_us": 38.369399309158325,
+          "tune_max_us": 38.89800012111664,
+          "status": "ok",
+          "wall_seconds": 0.36162495613098145
+        },
+        {
+          "config": {
+            "route": "all_compute",
+            "reg_m": 1,
+            "reg_n": 2,
+            "reg_k": 4,
+            "waves_m": 1,
+            "waves_n": 1,
+            "num_buffers": 2,
+            "swizzle_m": 32,
+            "direct_b_global": false,
+            "use_xcd_remap": false,
+            "main_loop_unroll": true
+          },
+          "phase": "allcompute",
+          "error": {
+            "passed": true,
+            "max_abs": 0.03125,
+            "rel_l2": 8.164757665527386e-06
+          },
+          "tune_e2e_us": 38.697800040245056,
+          "tune_min_us": 38.089001178741455,
+          "tune_max_us": 39.97179865837097,
+          "status": "ok",
+          "wall_seconds": 0.360231876373291
+        },
+        {
+          "config": {
+            "route": "all_compute",
+            "reg_m": 1,
+            "reg_n": 2,
+            "reg_k": 4,
+            "waves_m": 1,
+            "waves_n": 1,
+            "num_buffers": 3,
+            "swizzle_m": 32,
+            "direct_b_global": false,
+            "use_xcd_remap": false
+          },
+          "phase": "allcompute",
+          "error": {
+            "passed": true,
+            "max_abs": 0.03125,
+            "rel_l2": 8.164757665527386e-06
+          },
+          "tune_e2e_us": 23.771600425243378,
+          "tune_min_us": 23.058399558067322,
+          "tune_max_us": 26.455599069595337,
+          "status": "ok",
+          "wall_seconds": 0.4451024532318115
+        },
+        {
+          "config": {
+            "route": "all_compute",
+            "reg_m": 1,
+            "reg_n": 2,
+            "reg_k": 4,
+            "waves_m": 1,
+            "waves_n": 1,
+            "num_buffers": 3,
+            "swizzle_m": 32,
+            "direct_b_global": false,
+            "use_xcd_remap": false,
+            "main_loop_unroll": true
+          },
+          "phase": "allcompute",
+          "error": {
+            "passed": true,
+            "max_abs": 0.03125,
+            "rel_l2": 8.164757665527386e-06
+          },
+          "tune_e2e_us": 23.16260039806366,
+          "tune_min_us": 22.794200479984283,
+          "tune_max_us": 24.260200560092926,
+          "status": "ok",
+          "wall_seconds": 0.44524478912353516
+        },
+        {
+          "config": {
+            "route": "all_compute",
+            "reg_m": 1,
+            "reg_n": 2,
+            "reg_k": 4,
+            "waves_m": 1,
+            "waves_n": 1,
+            "num_buffers": 4,
+            "swizzle_m": 32,
+            "direct_b_global": false,
+            "use_xcd_remap": false
+          },
+          "phase": "allcompute",
+          "error": {
+            "passed": true,
+            "max_abs": 0.03125,
+            "rel_l2": 8.164757665527386e-06
+          },
+          "tune_e2e_us": 18.42759996652603,
+          "tune_min_us": 17.986999452114105,
+          "tune_max_us": 20.398399233818054,
+          "status": "ok",
+          "wall_seconds": 0.5294089317321777
+        },
+        {
+          "config": {
+            "route": "all_compute",
+            "reg_m": 1,
+            "reg_n": 2,
+            "reg_k": 4,
+            "waves_m": 1,
+            "waves_n": 1,
+            "num_buffers": 4,
+            "swizzle_m": 32,
+            "direct_b_global": false,
+            "use_xcd_remap": false,
+            "main_loop_unroll": true
+          },
+          "phase": "allcompute",
+          "error": {
+            "passed": true,
+            "max_abs": 0.03125,
+            "rel_l2": 8.164757665527386e-06
+          },
+          "tune_e2e_us": 18.05099993944168,
+          "tune_min_us": 17.586199939250946,
+          "tune_max_us": 18.467600643634796,
+          "status": "ok",
+          "wall_seconds": 0.529534101486206
+        },
+        {
+          "config": {
+            "route": "all_compute",
+            "reg_m": 1,
+            "reg_n": 1,
+            "reg_k": 4,
+            "waves_m": 1,
+            "waves_n": 2,
+            "num_buffers": 2,
+            "swizzle_m": 32,
+            "direct_b_global": false,
+            "use_xcd_remap": false
+          },
+          "phase": "allcompute",
+          "error": {
+            "passed": true,
+            "max_abs": 0.03125,
+            "rel_l2": 8.164757665527386e-06
+          },
+          "tune_e2e_us": 38.6817991733551,
+          "tune_min_us": 38.20100128650665,
+          "tune_max_us": 39.37880098819733,
+          "status": "ok",
+          "wall_seconds": 0.30913829803466797
+        },
+        {
+          "config": {
+            "route": "all_compute",
+            "reg_m": 1,
+            "reg_n": 1,
+            "reg_k": 4,
+            "waves_m": 1,
+            "waves_n": 2,
+            "num_buffers": 2,
+            "swizzle_m": 32,
+            "direct_b_global": false,
+            "use_xcd_remap": false,
+            "main_loop_unroll": true
+          },
+          "phase": "allcompute",
+          "error": {
+            "passed": true,
+            "max_abs": 0.03125,
+            "rel_l2": 8.164757665527386e-06
+          },
+          "tune_e2e_us": 38.36140036582947,
+          "tune_min_us": 37.968799471855164,
+          "tune_max_us": 40.46059846878052,
+          "status": "ok",
+          "wall_seconds": 0.311190128326416
+        },
+        {
+          "config": {
+            "route": "all_compute",
+            "reg_m": 1,
+            "reg_n": 1,
+            "reg_k": 4,
+            "waves_m": 1,
+            "waves_n": 2,
+            "num_buffers": 3,
+            "swizzle_m": 32,
+            "direct_b_global": false,
+            "use_xcd_remap": false
+          },
+          "phase": "allcompute",
+          "error": {
+            "passed": true,
+            "max_abs": 0.03125,
+            "rel_l2": 8.164757665527386e-06
+          },
+          "tune_e2e_us": 23.53920042514801,
+          "tune_min_us": 23.098599910736084,
+          "tune_max_us": 24.78100061416626,
+          "status": "ok",
+          "wall_seconds": 0.37608790397644043
+        },
+        {
+          "config": {
+            "route": "all_compute",
+            "reg_m": 1,
+            "reg_n": 1,
+            "reg_k": 4,
+            "waves_m": 1,
+            "waves_n": 2,
+            "num_buffers": 3,
+            "swizzle_m": 32,
+            "direct_b_global": false,
+            "use_xcd_remap": false,
+            "main_loop_unroll": true
+          },
+          "phase": "allcompute",
+          "error": {
+            "passed": true,
+            "max_abs": 0.03125,
+            "rel_l2": 8.164757665527386e-06
+          },
+          "tune_e2e_us": 22.946399450302124,
+          "tune_min_us": 22.489599883556366,
+          "tune_max_us": 24.40440058708191,
+          "status": "ok",
+          "wall_seconds": 0.3772006034851074
+        },
+        {
+          "config": {
+            "route": "all_compute",
+            "reg_m": 1,
+            "reg_n": 1,
+            "reg_k": 4,
+            "waves_m": 1,
+            "waves_n": 2,
+            "num_buffers": 4,
+            "swizzle_m": 32,
+            "direct_b_global": false,
+            "use_xcd_remap": false
+          },
+          "phase": "allcompute",
+          "error": {
+            "passed": true,
+            "max_abs": 0.03125,
+            "rel_l2": 8.164757665527386e-06
+          },
+          "tune_e2e_us": 18.475599586963654,
+          "tune_min_us": 17.746399343013763,
+          "tune_max_us": 19.97399926185608,
+          "status": "ok",
+          "wall_seconds": 0.44648051261901855
+        },
+        {
+          "config": {
+            "route": "all_compute",
+            "reg_m": 1,
+            "reg_n": 1,
+            "reg_k": 4,
+            "waves_m": 1,
+            "waves_n": 2,
+            "num_buffers": 4,
+            "swizzle_m": 32,
+            "direct_b_global": false,
+            "use_xcd_remap": false,
+            "main_loop_unroll": true
+          },
+          "phase": "allcompute",
+          "error": {
+            "passed": true,
+            "max_abs": 0.03125,
+            "rel_l2": 8.164757665527386e-06
+          },
+          "tune_e2e_us": 18.73999983072281,
+          "tune_min_us": 17.8507998585701,
+          "tune_max_us": 21.327799558639526,
+          "status": "ok",
+          "wall_seconds": 0.4459233283996582
+        },
+        {
+          "config": {
+            "route": "all_compute",
+            "reg_m": 1,
+            "reg_n": 2,
+            "reg_k": 4,
+            "waves_m": 1,
+            "waves_n": 2,
+            "num_buffers": 2,
+            "swizzle_m": 32,
+            "direct_b_global": false,
+            "use_xcd_remap": false
+          },
+          "phase": "allcompute",
+          "error": {
+            "passed": true,
+            "max_abs": 0.03125,
+            "rel_l2": 8.164757665527386e-06
+          },
+          "tune_e2e_us": 42.1750009059906,
+          "tune_min_us": 41.46200120449066,
+          "tune_max_us": 42.59980022907257,
+          "status": "ok",
+          "wall_seconds": 0.35956287384033203
+        },
+        {
+          "config": {
+            "route": "all_compute",
+            "reg_m": 1,
+            "reg_n": 2,
+            "reg_k": 4,
+            "waves_m": 1,
+            "waves_n": 2,
+            "num_buffers": 2,
+            "swizzle_m": 32,
+            "direct_b_global": false,
+            "use_xcd_remap": false,
+            "main_loop_unroll": true
+          },
+          "phase": "allcompute",
+          "error": {
+            "passed": true,
+            "max_abs": 0.03125,
+            "rel_l2": 8.164757665527386e-06
+          },
+          "tune_e2e_us": 41.934800148010254,
+          "tune_min_us": 41.253599524497986,
+          "tune_max_us": 42.07899868488312,
+          "status": "ok",
+          "wall_seconds": 0.3587465286254883
+        },
+        {
+          "config": {
+            "route": "all_compute",
+            "reg_m": 1,
+            "reg_n": 2,
+            "reg_k": 4,
+            "waves_m": 1,
+            "waves_n": 2,
+            "num_buffers": 3,
+            "swizzle_m": 32,
+            "direct_b_global": false,
+            "use_xcd_remap": false
+          },
+          "phase": "allcompute",
+          "error": {
+            "passed": true,
+            "max_abs": 0.03125,
+            "rel_l2": 8.164757665527386e-06
+          },
+          "tune_e2e_us": 24.308399856090546,
+          "tune_min_us": 24.0679994225502,
+          "tune_max_us": 24.917200207710266,
+          "status": "ok",
+          "wall_seconds": 0.4446594715118408
+        },
+        {
+          "config": {
+            "route": "all_compute",
+            "reg_m": 1,
+            "reg_n": 2,
+            "reg_k": 4,
+            "waves_m": 1,
+            "waves_n": 2,
+            "num_buffers": 3,
+            "swizzle_m": 32,
+            "direct_b_global": false,
+            "use_xcd_remap": false,
+            "main_loop_unroll": true
+          },
+          "phase": "allcompute",
+          "error": {
+            "passed": true,
+            "max_abs": 0.03125,
+            "rel_l2": 8.164757665527386e-06
+          },
+          "tune_e2e_us": 25.00540018081665,
+          "tune_min_us": 24.364599585533142,
+          "tune_max_us": 27.08039879798889,
+          "status": "ok",
+          "wall_seconds": 0.44556117057800293
+        },
+        {
+          "config": {
+            "route": "all_compute",
+            "reg_m": 1,
+            "reg_n": 2,
+            "reg_k": 4,
+            "waves_m": 1,
+            "waves_n": 2,
+            "num_buffers": 4,
+            "swizzle_m": 32,
+            "direct_b_global": false,
+            "use_xcd_remap": false
+          },
+          "phase": "allcompute",
+          "error": {
+            "passed": true,
+            "max_abs": 0.03125,
+            "rel_l2": 8.164757665527386e-06
+          },
+          "tune_e2e_us": 18.772199749946594,
+          "tune_min_us": 18.395400047302246,
+          "tune_max_us": 18.93240064382553,
+          "status": "ok",
+          "wall_seconds": 0.5301985740661621
+        },
+        {
+          "config": {
+            "route": "all_compute",
+            "reg_m": 1,
+            "reg_n": 2,
+            "reg_k": 4,
+            "waves_m": 1,
+            "waves_n": 2,
+            "num_buffers": 4,
+            "swizzle_m": 32,
+            "direct_b_global": false,
+            "use_xcd_remap": false,
+            "main_loop_unroll": true
+          },
+          "phase": "allcompute",
+          "error": {
+            "passed": true,
+            "max_abs": 0.03125,
+            "rel_l2": 8.164757665527386e-06
+          },
+          "tune_e2e_us": 19.300800561904907,
+          "tune_min_us": 18.28339993953705,
+          "tune_max_us": 19.98180001974106,
+          "status": "ok",
+          "wall_seconds": 0.5301299095153809
+        },
+        {
+          "config": {
+            "route": "all_compute",
+            "reg_m": 1,
+            "reg_n": 2,
+            "reg_k": 4,
+            "waves_m": 2,
+            "waves_n": 1,
+            "num_buffers": 2,
+            "swizzle_m": 32,
+            "direct_b_global": false,
+            "use_xcd_remap": false
+          },
+          "phase": "allcompute",
+          "error": {
+            "passed": true,
+            "max_abs": 0.03125,
+            "rel_l2": 8.164757665527386e-06
+          },
+          "tune_e2e_us": 40.35640060901642,
+          "tune_min_us": 39.547199010849,
+          "tune_max_us": 40.997400879859924,
+          "status": "ok",
+          "wall_seconds": 0.3607480525970459
+        },
+        {
+          "config": {
+            "route": "all_compute",
+            "reg_m": 1,
+            "reg_n": 2,
+            "reg_k": 4,
+            "waves_m": 2,
+            "waves_n": 1,
+            "num_buffers": 2,
+            "swizzle_m": 32,
+            "direct_b_global": false,
+            "use_xcd_remap": false,
+            "main_loop_unroll": true
+          },
+          "phase": "allcompute",
+          "error": {
+            "passed": true,
+            "max_abs": 0.03125,
+            "rel_l2": 8.164757665527386e-06
+          },
+          "tune_e2e_us": 39.73959982395172,
+          "tune_min_us": 39.26680088043213,
+          "tune_max_us": 41.101399064064026,
+          "status": "ok",
+          "wall_seconds": 0.3613917827606201
+        },
+        {
+          "config": {
+            "route": "all_compute",
+            "reg_m": 1,
+            "reg_n": 2,
+            "reg_k": 4,
+            "waves_m": 2,
+            "waves_n": 1,
+            "num_buffers": 3,
+            "swizzle_m": 32,
+            "direct_b_global": false,
+            "use_xcd_remap": false
+          },
+          "phase": "allcompute",
+          "error": {
+            "passed": true,
+            "max_abs": 0.03125,
+            "rel_l2": 8.164757665527386e-06
+          },
+          "tune_e2e_us": 24.540799856185913,
+          "tune_min_us": 23.74739944934845,
+          "tune_max_us": 24.6288001537323,
+          "status": "ok",
+          "wall_seconds": 0.44680094718933105
+        },
+        {
+          "config": {
+            "route": "all_compute",
+            "reg_m": 1,
+            "reg_n": 2,
+            "reg_k": 4,
+            "waves_m": 2,
+            "waves_n": 1,
+            "num_buffers": 3,
+            "swizzle_m": 32,
+            "direct_b_global": false,
+            "use_xcd_remap": false,
+            "main_loop_unroll": true
+          },
+          "phase": "allcompute",
+          "error": {
+            "passed": true,
+            "max_abs": 0.03125,
+            "rel_l2": 8.164757665527386e-06
+          },
+          "tune_e2e_us": 23.46699982881546,
+          "tune_min_us": 23.33099991083145,
+          "tune_max_us": 24.708999693393707,
+          "status": "ok",
+          "wall_seconds": 0.4465770721435547
+        },
+        {
+          "config": {
+            "route": "all_compute",
+            "reg_m": 1,
+            "reg_n": 2,
+            "reg_k": 4,
+            "waves_m": 2,
+            "waves_n": 1,
+            "num_buffers": 4,
+            "swizzle_m": 32,
+            "direct_b_global": false,
+            "use_xcd_remap": false
+          },
+          "phase": "allcompute",
+          "error": {
+            "passed": true,
+            "max_abs": 0.03125,
+            "rel_l2": 8.164757665527386e-06
+          },
+          "tune_e2e_us": 18.03479939699173,
+          "tune_min_us": 17.80260056257248,
+          "tune_max_us": 20.871199667453766,
+          "status": "ok",
+          "wall_seconds": 0.5277307033538818
+        },
+        {
+          "config": {
+            "route": "all_compute",
+            "reg_m": 1,
+            "reg_n": 2,
+            "reg_k": 4,
+            "waves_m": 2,
+            "waves_n": 1,
+            "num_buffers": 4,
+            "swizzle_m": 32,
+            "direct_b_global": false,
+            "use_xcd_remap": false,
+            "main_loop_unroll": true
+          },
+          "phase": "allcompute",
+          "error": {
+            "passed": true,
+            "max_abs": 0.03125,
+            "rel_l2": 8.164757665527386e-06
+          },
+          "tune_e2e_us": 19.204799830913544,
+          "tune_min_us": 18.475599586963654,
+          "tune_max_us": 20.91120034456253,
+          "status": "ok",
+          "wall_seconds": 0.5699779987335205
+        }
+      ]
+    },
+    {
+      "M": 512,
+      "N": 2048,
+      "K": 7168,
+      "final": {
+        "config": {
+          "route": "all_compute",
+          "reg_m": 2,
+          "reg_n": 2,
+          "reg_k": 4,
+          "waves_m": 4,
+          "waves_n": 2,
+          "num_buffers": 3,
+          "swizzle_m": 32,
+          "direct_b_global": false,
+          "use_xcd_remap": false
+        },
+        "error": {
+          "passed": true,
+          "max_abs": 1.0,
+          "rel_l2": 5.9821388813246473e-05,
+          "message": ""
+        },
+        "e2e_us": 27.973850071430206,
+        "min_us": 27.192699909210205,
+        "max_us": 37.09949851036072,
+        "tflops": 537.3727784203944
+      },
+      "trials": [
+        {
+          "config": {
+            "route": "production"
+          },
+          "phase": "allcompute",
+          "error": {
+            "passed": true,
+            "max_abs": 1.0,
+            "rel_l2": 5.9821388813246473e-05
+          },
+          "tune_e2e_us": 29.45219874382019,
+          "tune_min_us": 28.506600856781006,
+          "tune_max_us": 30.678001046180725,
+          "status": "ok",
+          "wall_seconds": 0.5679926872253418
+        },
+        {
+          "config": {
+            "route": "all_compute",
+            "reg_m": 1,
+            "reg_n": 2,
+            "reg_k": 4,
+            "waves_m": 2,
+            "waves_n": 2,
+            "num_buffers": 2,
+            "swizzle_m": 32,
+            "direct_b_global": false,
+            "use_xcd_remap": false
+          },
+          "phase": "allcompute",
+          "error": {
+            "passed": true,
+            "max_abs": 1.0,
+            "rel_l2": 5.9821388813246473e-05
+          },
+          "tune_e2e_us": 44.74700093269348,
+          "tune_min_us": 43.6491996049881,
+          "tune_max_us": 45.08340060710907,
+          "status": "ok",
+          "wall_seconds": 0.37230515480041504
+        },
+        {
+          "config": {
+            "route": "all_compute",
+            "reg_m": 1,
+            "reg_n": 2,
+            "reg_k": 4,
+            "waves_m": 2,
+            "waves_n": 2,
+            "num_buffers": 2,
+            "swizzle_m": 32,
+            "direct_b_global": false,
+            "use_xcd_remap": false,
+            "main_loop_unroll": true
+          },
+          "phase": "allcompute",
+          "error": {
+            "passed": true,
+            "max_abs": 1.0,
+            "rel_l2": 5.9821388813246473e-05
+          },
+          "tune_e2e_us": 44.48240101337433,
+          "tune_min_us": 43.833598494529724,
+          "tune_max_us": 45.54019868373871,
+          "status": "ok",
+          "wall_seconds": 0.3699498176574707
+        },
+        {
+          "config": {
+            "route": "all_compute",
+            "reg_m": 1,
+            "reg_n": 2,
+            "reg_k": 4,
+            "waves_m": 2,
+            "waves_n": 2,
+            "num_buffers": 3,
+            "swizzle_m": 32,
+            "direct_b_global": false,
+            "use_xcd_remap": false
+          },
+          "phase": "allcompute",
+          "error": {
+            "passed": true,
+            "max_abs": 1.0,
+            "rel_l2": 5.9821388813246473e-05
+          },
+          "tune_e2e_us": 52.47259736061096,
+          "tune_min_us": 51.55919790267944,
+          "tune_max_us": 52.80500054359436,
+          "status": "ok",
+          "wall_seconds": 0.45762085914611816
+        },
+        {
+          "config": {
+            "route": "all_compute",
+            "reg_m": 1,
+            "reg_n": 2,
+            "reg_k": 4,
+            "waves_m": 2,
+            "waves_n": 2,
+            "num_buffers": 3,
+            "swizzle_m": 32,
+            "direct_b_global": false,
+            "use_xcd_remap": false,
+            "main_loop_unroll": true
+          },
+          "phase": "allcompute",
+          "error": {
+            "passed": true,
+            "max_abs": 1.0,
+            "rel_l2": 5.9821388813246473e-05
+          },
+          "tune_e2e_us": 52.14399695396423,
+          "tune_min_us": 45.30180096626282,
+          "tune_max_us": 53.00920009613037,
+          "status": "ok",
+          "wall_seconds": 0.45790934562683105
+        },
+        {
+          "config": {
+            "route": "all_compute",
+            "reg_m": 1,
+            "reg_n": 2,
+            "reg_k": 4,
+            "waves_m": 2,
+            "waves_n": 2,
+            "num_buffers": 4,
+            "swizzle_m": 32,
+            "direct_b_global": false,
+            "use_xcd_remap": false
+          },
+          "phase": "allcompute",
+          "error": {
+            "passed": true,
+            "max_abs": 1.0,
+            "rel_l2": 5.9821388813246473e-05
+          },
+          "tune_e2e_us": 51.86539888381958,
+          "tune_min_us": 51.76140069961548,
+          "tune_max_us": 53.039199113845825,
+          "status": "ok",
+          "wall_seconds": 0.5410213470458984
+        },
+        {
+          "config": {
+            "route": "all_compute",
+            "reg_m": 1,
+            "reg_n": 2,
+            "reg_k": 4,
+            "waves_m": 2,
+            "waves_n": 2,
+            "num_buffers": 4,
+            "swizzle_m": 32,
+            "direct_b_global": false,
+            "use_xcd_remap": false,
+            "main_loop_unroll": true
+          },
+          "phase": "allcompute",
+          "error": {
+            "passed": true,
+            "max_abs": 1.0,
+            "rel_l2": 5.9821388813246473e-05
+          },
+          "tune_e2e_us": 52.302199602127075,
+          "tune_min_us": 51.817601919174194,
+          "tune_max_us": 53.35180163383484,
+          "status": "ok",
+          "wall_seconds": 0.541670560836792
+        },
+        {
+          "config": {
+            "route": "all_compute",
+            "reg_m": 2,
+            "reg_n": 2,
+            "reg_k": 4,
+            "waves_m": 2,
+            "waves_n": 2,
+            "num_buffers": 2,
+            "swizzle_m": 32,
+            "direct_b_global": false,
+            "use_xcd_remap": false
+          },
+          "phase": "allcompute",
+          "error": {
+            "passed": true,
+            "max_abs": 1.0,
+            "rel_l2": 5.9821388813246473e-05
+          },
+          "tune_e2e_us": 44.258201122283936,
+          "tune_min_us": 44.09799873828888,
+          "tune_max_us": 45.644399523735046,
+          "status": "ok",
+          "wall_seconds": 0.45213890075683594
+        },
+        {
+          "config": {
+            "route": "all_compute",
+            "reg_m": 2,
+            "reg_n": 2,
+            "reg_k": 4,
+            "waves_m": 2,
+            "waves_n": 2,
+            "num_buffers": 2,
+            "swizzle_m": 32,
+            "direct_b_global": false,
+            "use_xcd_remap": false,
+            "main_loop_unroll": true
+          },
+          "phase": "allcompute",
+          "error": {
+            "passed": true,
+            "max_abs": 1.0,
+            "rel_l2": 5.9821388813246473e-05
+          },
+          "tune_e2e_us": 44.09799873828888,
+          "tune_min_us": 43.60919892787933,
+          "tune_max_us": 44.915199279785156,
+          "status": "ok",
+          "wall_seconds": 0.4535984992980957
+        },
+        {
+          "config": {
+            "route": "all_compute",
+            "reg_m": 2,
+            "reg_n": 2,
+            "reg_k": 4,
+            "waves_m": 2,
+            "waves_n": 2,
+            "num_buffers": 3,
+            "swizzle_m": 32,
+            "direct_b_global": false,
+            "use_xcd_remap": false
+          },
+          "phase": "allcompute",
+          "error": {
+            "passed": true,
+            "max_abs": 1.0,
+            "rel_l2": 5.9821388813246473e-05
+          },
+          "tune_e2e_us": 33.61639976501465,
+          "tune_min_us": 31.55919909477234,
+          "tune_max_us": 47.73539900779724,
+          "status": "ok",
+          "wall_seconds": 0.5637059211730957
+        },
+        {
+          "config": {
+            "route": "all_compute",
+            "reg_m": 2,
+            "reg_n": 2,
+            "reg_k": 4,
+            "waves_m": 2,
+            "waves_n": 2,
+            "num_buffers": 3,
+            "swizzle_m": 32,
+            "direct_b_global": false,
+            "use_xcd_remap": false,
+            "main_loop_unroll": true
+          },
+          "phase": "allcompute",
+          "error": {
+            "passed": true,
+            "max_abs": 1.0,
+            "rel_l2": 5.9821388813246473e-05
+          },
+          "tune_e2e_us": 35.374799370765686,
+          "tune_min_us": 34.555599093437195,
+          "tune_max_us": 39.10239934921265,
+          "status": "ok",
+          "wall_seconds": 0.5640261173248291
+        },
+        {
+          "config": {
+            "route": "all_compute",
+            "reg_m": 2,
+            "reg_n": 2,
+            "reg_k": 4,
+            "waves_m": 2,
+            "waves_n": 2,
+            "num_buffers": 4,
+            "swizzle_m": 32,
+            "direct_b_global": false,
+            "use_xcd_remap": false
+          },
+          "phase": "allcompute",
+          "error": {
+            "passed": true,
+            "max_abs": 1.0,
+            "rel_l2": 5.9821388813246473e-05
+          },
+          "tune_e2e_us": 39.47100043296814,
+          "tune_min_us": 37.704598903656006,
+          "tune_max_us": 43.56519877910614,
+          "status": "ok",
+          "wall_seconds": 0.6760082244873047
+        },
+        {
+          "config": {
+            "route": "all_compute",
+            "reg_m": 2,
+            "reg_n": 2,
+            "reg_k": 4,
+            "waves_m": 2,
+            "waves_n": 2,
+            "num_buffers": 4,
+            "swizzle_m": 32,
+            "direct_b_global": false,
+            "use_xcd_remap": false,
+            "main_loop_unroll": true
+          },
+          "phase": "allcompute",
+          "error": {
+            "passed": true,
+            "max_abs": 1.0,
+            "rel_l2": 5.9821388813246473e-05
+          },
+          "tune_e2e_us": 38.14919888973236,
+          "tune_min_us": 37.70639896392822,
+          "tune_max_us": 44.126200675964355,
+          "status": "ok",
+          "wall_seconds": 0.6776351928710938
+        },
+        {
+          "config": {
+            "route": "all_compute",
+            "reg_m": 2,
+            "reg_n": 4,
+            "reg_k": 4,
+            "waves_m": 2,
+            "waves_n": 2,
+            "num_buffers": 2,
+            "swizzle_m": 32,
+            "direct_b_global": false,
+            "use_xcd_remap": false
+          },
+          "phase": "allcompute",
+          "error": {
+            "passed": true,
+            "max_abs": 1.0,
+            "rel_l2": 5.9821388813246473e-05
+          },
+          "tune_e2e_us": 49.17759895324707,
+          "tune_min_us": 48.80099892616272,
+          "tune_max_us": 51.50120258331299,
+          "status": "ok",
+          "wall_seconds": 0.7379086017608643
+        },
+        {
+          "config": {
+            "route": "all_compute",
+            "reg_m": 2,
+            "reg_n": 4,
+            "reg_k": 4,
+            "waves_m": 2,
+            "waves_n": 2,
+            "num_buffers": 2,
+            "swizzle_m": 32,
+            "direct_b_global": false,
+            "use_xcd_remap": false,
+            "main_loop_unroll": true
+          },
+          "phase": "allcompute",
+          "error": {
+            "passed": true,
+            "max_abs": 1.0,
+            "rel_l2": 5.9821388813246473e-05
+          },
+          "tune_e2e_us": 49.40179884433746,
+          "tune_min_us": 48.38440120220184,
+          "tune_max_us": 50.93219876289368,
+          "status": "ok",
+          "wall_seconds": 0.6679720878601074
+        },
+        {
+          "config": {
+            "route": "all_compute",
+            "reg_m": 2,
+            "reg_n": 4,
+            "reg_k": 4,
+            "waves_m": 2,
+            "waves_n": 2,
+            "num_buffers": 3,
+            "swizzle_m": 32,
+            "direct_b_global": false,
+            "use_xcd_remap": false
+          },
+          "phase": "allcompute",
+          "error": {
+            "passed": true,
+            "max_abs": 1.0,
+            "rel_l2": 5.9821388813246473e-05
+          },
+          "tune_e2e_us": 29.892799258232117,
+          "tune_min_us": 29.195600748062134,
+          "tune_max_us": 30.38940131664276,
+          "status": "ok",
+          "wall_seconds": 0.8273293972015381
+        },
+        {
+          "config": {
+            "route": "all_compute",
+            "reg_m": 2,
+            "reg_n": 4,
+            "reg_k": 4,
+            "waves_m": 2,
+            "waves_n": 2,
+            "num_buffers": 3,
+            "swizzle_m": 32,
+            "direct_b_global": false,
+            "use_xcd_remap": false,
+            "main_loop_unroll": true
+          },
+          "phase": "allcompute",
+          "error": {
+            "passed": true,
+            "max_abs": 1.0,
+            "rel_l2": 5.9821388813246473e-05
+          },
+          "tune_e2e_us": 29.564198851585388,
+          "tune_min_us": 28.762999176979065,
+          "tune_max_us": 32.386401295661926,
+          "status": "ok",
+          "wall_seconds": 0.8295800685882568
+        },
+        {
+          "config": {
+            "route": "all_compute",
+            "reg_m": 2,
+            "reg_n": 4,
+            "reg_k": 4,
+            "waves_m": 2,
+            "waves_n": 2,
+            "num_buffers": 4,
+            "swizzle_m": 32,
+            "direct_b_global": false,
+            "use_xcd_remap": false
+          },
+          "phase": "allcompute",
+          "error": {
+            "passed": true,
+            "max_abs": 1.0,
+            "rel_l2": 5.9821388813246473e-05
+          },
+          "tune_e2e_us": 32.22619891166687,
+          "tune_min_us": 31.25079870223999,
+          "tune_max_us": 34.327200055122375,
+          "status": "ok",
+          "wall_seconds": 1.001054048538208
+        },
+        {
+          "config": {
+            "route": "all_compute",
+            "reg_m": 2,
+            "reg_n": 4,
+            "reg_k": 4,
+            "waves_m": 2,
+            "waves_n": 2,
+            "num_buffers": 4,
+            "swizzle_m": 32,
+            "direct_b_global": false,
+            "use_xcd_remap": false,
+            "main_loop_unroll": true
+          },
+          "phase": "allcompute",
+          "error": {
+            "passed": true,
+            "max_abs": 1.0,
+            "rel_l2": 5.9821388813246473e-05
+          },
+          "tune_e2e_us": 31.471198797225952,
+          "tune_min_us": 30.845999717712402,
+          "tune_max_us": 32.34240114688873,
+          "status": "ok",
+          "wall_seconds": 0.9997854232788086
+        },
+        {
+          "config": {
+            "route": "all_compute",
+            "reg_m": 2,
+            "reg_n": 1,
+            "reg_k": 4,
+            "waves_m": 4,
+            "waves_n": 2,
+            "num_buffers": 2,
+            "swizzle_m": 32,
+            "direct_b_global": false,
+            "use_xcd_remap": false
+          },
+          "phase": "allcompute",
+          "error": {
+            "passed": true,
+            "max_abs": 1.0,
+            "rel_l2": 5.9821388813246473e-05
+          },
+          "tune_e2e_us": 47.703200578689575,
+          "tune_min_us": 47.294798493385315,
+          "tune_max_us": 49.55419898033142,
+          "status": "ok",
+          "wall_seconds": 0.37460947036743164
+        },
+        {
+          "config": {
+            "route": "all_compute",
+            "reg_m": 2,
+            "reg_n": 1,
+            "reg_k": 4,
+            "waves_m": 4,
+            "waves_n": 2,
+            "num_buffers": 2,
+            "swizzle_m": 32,
+            "direct_b_global": false,
+            "use_xcd_remap": false,
+            "main_loop_unroll": true
+          },
+          "phase": "allcompute",
+          "error": {
+            "passed": true,
+            "max_abs": 1.0,
+            "rel_l2": 5.9821388813246473e-05
+          },
+          "tune_e2e_us": 47.79160022735596,
+          "tune_min_us": 47.615399956703186,
+          "tune_max_us": 48.34420084953308,
+          "status": "ok",
+          "wall_seconds": 0.3738720417022705
+        },
+        {
+          "config": {
+            "route": "all_compute",
+            "reg_m": 2,
+            "reg_n": 1,
+            "reg_k": 4,
+            "waves_m": 4,
+            "waves_n": 2,
+            "num_buffers": 3,
+            "swizzle_m": 32,
+            "direct_b_global": false,
+            "use_xcd_remap": false
+          },
+          "phase": "allcompute",
+          "error": {
+            "passed": true,
+            "max_abs": 1.0,
+            "rel_l2": 5.9821388813246473e-05
+          },
+          "tune_e2e_us": 51.569199562072754,
+          "tune_min_us": 51.26060247421265,
+          "tune_max_us": 52.18999981880188,
+          "status": "ok",
+          "wall_seconds": 0.46114039421081543
+        },
+        {
+          "config": {
+            "route": "all_compute",
+            "reg_m": 2,
+            "reg_n": 1,
+            "reg_k": 4,
+            "waves_m": 4,
+            "waves_n": 2,
+            "num_buffers": 3,
+            "swizzle_m": 32,
+            "direct_b_global": false,
+            "use_xcd_remap": false,
+            "main_loop_unroll": true
+          },
+          "phase": "allcompute",
+          "error": {
+            "passed": true,
+            "max_abs": 1.0,
+            "rel_l2": 5.9821388813246473e-05
+          },
+          "tune_e2e_us": 51.67539715766907,
+          "tune_min_us": 41.41800105571747,
+          "tune_max_us": 52.73699760437012,
+          "status": "ok",
+          "wall_seconds": 0.4597291946411133
+        },
+        {
+          "config": {
+            "route": "all_compute",
+            "reg_m": 2,
+            "reg_n": 1,
+            "reg_k": 4,
+            "waves_m": 4,
+            "waves_n": 2,
+            "num_buffers": 4,
+            "swizzle_m": 32,
+            "direct_b_global": false,
+            "use_xcd_remap": false
+          },
+          "phase": "allcompute",
+          "error": {
+            "passed": true,
+            "max_abs": 1.0,
+            "rel_l2": 5.9821388813246473e-05
+          },
+          "tune_e2e_us": 50.94220042228699,
+          "tune_min_us": 50.62779784202576,
+          "tune_max_us": 51.51100158691406,
+          "status": "ok",
+          "wall_seconds": 0.550581693649292
+        },
+        {
+          "config": {
+            "route": "all_compute",
+            "reg_m": 2,
+            "reg_n": 1,
+            "reg_k": 4,
+            "waves_m": 4,
+            "waves_n": 2,
+            "num_buffers": 4,
+            "swizzle_m": 32,
+            "direct_b_global": false,
+            "use_xcd_remap": false,
+            "main_loop_unroll": true
+          },
+          "phase": "allcompute",
+          "error": {
+            "passed": true,
+            "max_abs": 1.0,
+            "rel_l2": 5.9821388813246473e-05
+          },
+          "tune_e2e_us": 50.60780048370361,
+          "tune_min_us": 50.361400842666626,
+          "tune_max_us": 51.25859975814819,
+          "status": "ok",
+          "wall_seconds": 0.5510008335113525
+        },
+        {
+          "config": {
+            "route": "all_compute",
+            "reg_m": 2,
+            "reg_n": 2,
+            "reg_k": 4,
+            "waves_m": 4,
+            "waves_n": 2,
+            "num_buffers": 2,
+            "swizzle_m": 32,
+            "direct_b_global": false,
+            "use_xcd_remap": false
+          },
+          "phase": "allcompute",
+          "error": {
+            "passed": true,
+            "max_abs": 1.0,
+            "rel_l2": 5.9821388813246473e-05
+          },
+          "tune_e2e_us": 48.104000091552734,
+          "tune_min_us": 47.150400280952454,
+          "tune_max_us": 50.30720233917236,
+          "status": "ok",
+          "wall_seconds": 0.4574577808380127
+        },
+        {
+          "config": {
+            "route": "all_compute",
+            "reg_m": 2,
+            "reg_n": 2,
+            "reg_k": 4,
+            "waves_m": 4,
+            "waves_n": 2,
+            "num_buffers": 2,
+            "swizzle_m": 32,
+            "direct_b_global": false,
+            "use_xcd_remap": false,
+            "main_loop_unroll": true
+          },
+          "phase": "allcompute",
+          "error": {
+            "passed": true,
+            "max_abs": 1.0,
+            "rel_l2": 5.9821388813246473e-05
+          },
+          "tune_e2e_us": 48.48859906196594,
+          "tune_min_us": 47.48699963092804,
+          "tune_max_us": 49.79439973831177,
+          "status": "ok",
+          "wall_seconds": 0.455441951751709
+        },
+        {
+          "config": {
+            "route": "all_compute",
+            "reg_m": 2,
+            "reg_n": 2,
+            "reg_k": 4,
+            "waves_m": 4,
+            "waves_n": 2,
+            "num_buffers": 3,
+            "swizzle_m": 32,
+            "direct_b_global": false,
+            "use_xcd_remap": false
+          },
+          "phase": "allcompute",
+          "error": {
+            "passed": true,
+            "max_abs": 1.0,
+            "rel_l2": 5.9821388813246473e-05
+          },
+          "tune_e2e_us": 29.17959988117218,
+          "tune_min_us": 28.682801127433777,
+          "tune_max_us": 30.76399862766266,
+          "status": "ok",
+          "wall_seconds": 0.0015575885772705078
+        },
+        {
+          "config": {
+            "route": "all_compute",
+            "reg_m": 2,
+            "reg_n": 2,
+            "reg_k": 4,
+            "waves_m": 4,
+            "waves_n": 2,
+            "num_buffers": 3,
+            "swizzle_m": 32,
+            "direct_b_global": false,
+            "use_xcd_remap": false,
+            "main_loop_unroll": true
+          },
+          "phase": "allcompute",
+          "error": {
+            "passed": true,
+            "max_abs": 1.0,
+            "rel_l2": 5.9821388813246473e-05
+          },
+          "tune_e2e_us": 30.457600951194763,
+          "tune_min_us": 28.554800152778625,
+          "tune_max_us": 34.513598680496216,
+          "status": "ok",
+          "wall_seconds": 0.56679368019104
+        },
+        {
+          "config": {
+            "route": "all_compute",
+            "reg_m": 2,
+            "reg_n": 2,
+            "reg_k": 4,
+            "waves_m": 4,
+            "waves_n": 2,
+            "num_buffers": 4,
+            "swizzle_m": 32,
+            "direct_b_global": false,
+            "use_xcd_remap": false
+          },
+          "phase": "allcompute",
+          "error": {
+            "passed": true,
+            "max_abs": 1.0,
+            "rel_l2": 5.9821388813246473e-05
+          },
+          "tune_e2e_us": 36.190199851989746,
+          "tune_min_us": 34.936198592185974,
+          "tune_max_us": 41.10159873962402,
+          "status": "ok",
+          "wall_seconds": 0.684258222579956
+        },
+        {
+          "config": {
+            "route": "all_compute",
+            "reg_m": 2,
+            "reg_n": 2,
+            "reg_k": 4,
+            "waves_m": 4,
+            "waves_n": 2,
+            "num_buffers": 4,
+            "swizzle_m": 32,
+            "direct_b_global": false,
+            "use_xcd_remap": false,
+            "main_loop_unroll": true
+          },
+          "phase": "allcompute",
+          "error": {
+            "passed": true,
+            "max_abs": 1.0,
+            "rel_l2": 5.9821388813246473e-05
+          },
+          "tune_e2e_us": 37.30979859828949,
+          "tune_min_us": 35.13459861278534,
+          "tune_max_us": 42.88420081138611,
+          "status": "ok",
+          "wall_seconds": 0.687692403793335
+        },
+        {
+          "config": {
+            "route": "all_compute",
+            "reg_m": 2,
+            "reg_n": 4,
+            "reg_k": 4,
+            "waves_m": 4,
+            "waves_n": 2,
+            "num_buffers": 2,
+            "swizzle_m": 32,
+            "direct_b_global": false,
+            "use_xcd_remap": false
+          },
+          "phase": "allcompute",
+          "error": {
+            "passed": true,
+            "max_abs": 1.0,
+            "rel_l2": 5.9821388813246473e-05
+          },
+          "tune_e2e_us": 51.06840133666992,
+          "tune_min_us": 50.10700225830078,
+          "tune_max_us": 53.19160223007202,
+          "status": "ok",
+          "wall_seconds": 0.6707630157470703
+        },
+        {
+          "config": {
+            "route": "all_compute",
+            "reg_m": 2,
+            "reg_n": 4,
+            "reg_k": 4,
+            "waves_m": 4,
+            "waves_n": 2,
+            "num_buffers": 2,
+            "swizzle_m": 32,
+            "direct_b_global": false,
+            "use_xcd_remap": false,
+            "main_loop_unroll": true
+          },
+          "phase": "allcompute",
+          "error": {
+            "passed": true,
+            "max_abs": 1.0,
+            "rel_l2": 5.9821388813246473e-05
+          },
+          "tune_e2e_us": 51.42099857330322,
+          "tune_min_us": 50.06679892539978,
+          "tune_max_us": 53.76039743423462,
+          "status": "ok",
+          "wall_seconds": 0.6749882698059082
+        },
+        {
+          "config": {
+            "route": "all_compute",
+            "reg_m": 2,
+            "reg_n": 4,
+            "reg_k": 4,
+            "waves_m": 4,
+            "waves_n": 2,
+            "num_buffers": 3,
+            "swizzle_m": 32,
+            "direct_b_global": false,
+            "use_xcd_remap": false
+          },
+          "phase": "allcompute",
+          "error": {
+            "passed": true,
+            "max_abs": 1.0,
+            "rel_l2": 5.9821388813246473e-05
+          },
+          "tune_e2e_us": 35.436999797821045,
+          "tune_min_us": 34.53980088233948,
+          "tune_max_us": 37.24760115146637,
+          "status": "ok",
+          "wall_seconds": 0.8353030681610107
+        },
+        {
+          "config": {
+            "route": "all_compute",
+            "reg_m": 2,
+            "reg_n": 4,
+            "reg_k": 4,
+            "waves_m": 4,
+            "waves_n": 2,
+            "num_buffers": 3,
+            "swizzle_m": 32,
+            "direct_b_global": false,
+            "use_xcd_remap": false,
+            "main_loop_unroll": true
+          },
+          "phase": "allcompute",
+          "error": {
+            "passed": true,
+            "max_abs": 1.0,
+            "rel_l2": 5.9821388813246473e-05
+          },
+          "tune_e2e_us": 34.85200107097626,
+          "tune_min_us": 34.6917986869812,
+          "tune_max_us": 36.63080036640167,
+          "status": "ok",
+          "wall_seconds": 0.8362874984741211
+        },
+        {
+          "config": {
+            "route": "all_compute",
+            "reg_m": 2,
+            "reg_n": 4,
+            "reg_k": 4,
+            "waves_m": 4,
+            "waves_n": 2,
+            "num_buffers": 4,
+            "swizzle_m": 32,
+            "direct_b_global": false,
+            "use_xcd_remap": false
+          },
+          "phase": "allcompute",
+          "error": {
+            "passed": true,
+            "max_abs": 1.0,
+            "rel_l2": 5.9821388813246473e-05
+          },
+          "tune_e2e_us": 37.29580044746399,
+          "tune_min_us": 36.750999093055725,
+          "tune_max_us": 38.826000690460205,
+          "status": "ok",
+          "wall_seconds": 1.011078119277954
+        },
+        {
+          "config": {
+            "route": "all_compute",
+            "reg_m": 2,
+            "reg_n": 4,
+            "reg_k": 4,
+            "waves_m": 4,
+            "waves_n": 2,
+            "num_buffers": 4,
+            "swizzle_m": 32,
+            "direct_b_global": false,
+            "use_xcd_remap": false,
+            "main_loop_unroll": true
+          },
+          "phase": "allcompute",
+          "error": {
+            "passed": true,
+            "max_abs": 1.0,
+            "rel_l2": 5.9821388813246473e-05
+          },
+          "tune_e2e_us": 37.432000041007996,
+          "tune_min_us": 36.831000447273254,
+          "tune_max_us": 38.649800419807434,
+          "status": "ok",
+          "wall_seconds": 1.0081920623779297
+        },
+        {
+          "config": {
+            "route": "all_compute",
+            "reg_m": 8,
+            "reg_n": 4,
+            "reg_k": 2,
+            "waves_m": 1,
+            "waves_n": 4,
+            "num_buffers": 2,
+            "swizzle_m": 8,
+            "direct_b_global": true,
+            "use_xcd_remap": true
+          },
+          "phase": "allcompute",
+          "error": {
+            "passed": true,
+            "max_abs": 1.0,
+            "rel_l2": 5.9821388813246473e-05
+          },
+          "tune_e2e_us": 109.0190052986145,
+          "tune_min_us": 108.12180042266846,
+          "tune_max_us": 112.64040470123291,
+          "status": "ok",
+          "wall_seconds": 2.2522614002227783
+        },
+        {
+          "config": {
+            "route": "all_compute",
+            "reg_m": 8,
+            "reg_n": 4,
+            "reg_k": 2,
+            "waves_m": 1,
+            "waves_n": 4,
+            "num_buffers": 2,
+            "swizzle_m": 16,
+            "direct_b_global": true,
+            "use_xcd_remap": true
+          },
+          "phase": "allcompute",
+          "error": {
+            "passed": true,
+            "max_abs": 1.0,
+            "rel_l2": 5.9821388813246473e-05
+          },
+          "tune_e2e_us": 109.5479965209961,
+          "tune_min_us": 107.43260383605957,
+          "tune_max_us": 110.5254054069519,
+          "status": "ok",
+          "wall_seconds": 2.2537882328033447
+        },
+        {
+          "config": {
+            "route": "all_compute",
+            "reg_m": 8,
+            "reg_n": 4,
+            "reg_k": 2,
+            "waves_m": 1,
+            "waves_n": 4,
+            "num_buffers": 2,
+            "swizzle_m": 32,
+            "direct_b_global": true,
+            "use_xcd_remap": true
+          },
+          "phase": "allcompute",
+          "error": {
+            "passed": true,
+            "max_abs": 1.0,
+            "rel_l2": 5.9821388813246473e-05
+          },
+          "tune_e2e_us": 109.0831995010376,
+          "tune_min_us": 107.28839635848999,
+          "tune_max_us": 110.9339952468872,
+          "status": "ok",
+          "wall_seconds": 2.263252019882202
+        },
+        {
+          "config": {
+            "route": "all_compute",
+            "reg_m": 8,
+            "reg_n": 4,
+            "reg_k": 2,
+            "waves_m": 1,
+            "waves_n": 4,
+            "num_buffers": 3,
+            "swizzle_m": 8,
+            "direct_b_global": true,
+            "use_xcd_remap": true
+          },
+          "phase": "allcompute",
+          "error": {
+            "passed": true,
+            "max_abs": 1.0,
+            "rel_l2": 5.9821388813246473e-05
+          },
+          "tune_e2e_us": 95.36659717559814,
+          "tune_min_us": 94.87800002098083,
+          "tune_max_us": 97.94639945030212,
+          "status": "ok",
+          "wall_seconds": 2.48478627204895
+        },
+        {
+          "config": {
+            "route": "all_compute",
+            "reg_m": 8,
+            "reg_n": 4,
+            "reg_k": 2,
+            "waves_m": 1,
+            "waves_n": 4,
+            "num_buffers": 3,
+            "swizzle_m": 16,
+            "direct_b_global": true,
+            "use_xcd_remap": true
+          },
+          "phase": "allcompute",
+          "error": {
+            "passed": true,
+            "max_abs": 1.0,
+            "rel_l2": 5.9821388813246473e-05
+          },
+          "tune_e2e_us": 96.0316002368927,
+          "tune_min_us": 94.04460191726685,
+          "tune_max_us": 97.66600131988525,
+          "status": "ok",
+          "wall_seconds": 2.5198724269866943
+        },
+        {
+          "config": {
+            "route": "all_compute",
+            "reg_m": 8,
+            "reg_n": 4,
+            "reg_k": 2,
+            "waves_m": 1,
+            "waves_n": 4,
+            "num_buffers": 3,
+            "swizzle_m": 32,
+            "direct_b_global": true,
+            "use_xcd_remap": true
+          },
+          "phase": "allcompute",
+          "error": {
+            "passed": true,
+            "max_abs": 1.0,
+            "rel_l2": 5.9821388813246473e-05
+          },
+          "tune_e2e_us": 96.6808021068573,
+          "tune_min_us": 94.26900148391724,
+          "tune_max_us": 97.41780161857605,
+          "status": "ok",
+          "wall_seconds": 2.4891357421875
+        }
+      ]
+    },
+    {
+      "M": 4096,
+      "N": 2048,
+      "K": 4096,
+      "final": {
+        "config": {
+          "route": "all_compute",
+          "reg_m": 8,
+          "reg_n": 4,
+          "reg_k": 2,
+          "waves_m": 1,
+          "waves_n": 4,
+          "num_buffers": 2,
+          "swizzle_m": 32,
+          "direct_b_global": true,
+          "use_xcd_remap": true
+        },
+        "error": {
+          "passed": true,
+          "max_abs": 1.0,
+          "rel_l2": 5.176489686399624e-05,
+          "message": ""
+        },
+        "e2e_us": 87.27100193500519,
+        "min_us": 82.72179961204529,
+        "max_us": 107.63299465179443,
+        "tflops": 787.4262379521966
+      },
+      "trials": [
+        {
+          "config": {
+            "route": "production"
+          },
+          "phase": "allcompute",
+          "error": {
+            "passed": true,
+            "max_abs": 1.0,
+            "rel_l2": 5.176489686399624e-05
+          },
+          "tune_e2e_us": 89.0832006931305,
+          "tune_min_us": 88.23599815368652,
+          "tune_max_us": 97.00919985771179,
+          "status": "ok",
+          "wall_seconds": 2.49234676361084
+        },
+        {
+          "config": {
+            "route": "all_compute",
+            "reg_m": 2,
+            "reg_n": 2,
+            "reg_k": 4,
+            "waves_m": 2,
+            "waves_n": 2,
+            "num_buffers": 2,
+            "swizzle_m": 32,
+            "direct_b_global": false,
+            "use_xcd_remap": false
+          },
+          "phase": "allcompute",
+          "error": {
+            "passed": true,
+            "max_abs": 1.0,
+            "rel_l2": 5.176489686399624e-05
+          },
+          "tune_e2e_us": 148.22160005569458,
+          "tune_min_us": 138.67559432983398,
+          "tune_max_us": 149.14499521255493,
+          "status": "ok",
+          "wall_seconds": 0.4631171226501465
+        },
+        {
+          "config": {
+            "route": "all_compute",
+            "reg_m": 2,
+            "reg_n": 2,
+            "reg_k": 4,
+            "waves_m": 2,
+            "waves_n": 2,
+            "num_buffers": 2,
+            "swizzle_m": 32,
+            "direct_b_global": false,
+            "use_xcd_remap": false,
+            "main_loop_unroll": true
+          },
+          "phase": "allcompute",
+          "error": {
+            "passed": true,
+            "max_abs": 1.0,
+            "rel_l2": 5.176489686399624e-05
+          },
+          "tune_e2e_us": 138.8677954673767,
+          "tune_min_us": 128.56040000915527,
+          "tune_max_us": 139.9814009666443,
+          "status": "ok",
+          "wall_seconds": 0.46633195877075195
+        },
+        {
+          "config": {
+            "route": "all_compute",
+            "reg_m": 2,
+            "reg_n": 2,
+            "reg_k": 4,
+            "waves_m": 2,
+            "waves_n": 2,
+            "num_buffers": 3,
+            "swizzle_m": 32,
+            "direct_b_global": false,
+            "use_xcd_remap": false
+          },
+          "phase": "allcompute",
+          "error": {
+            "passed": true,
+            "max_abs": 1.0,
+            "rel_l2": 5.176489686399624e-05
+          },
+          "tune_e2e_us": 147.08000421524048,
+          "tune_min_us": 140.666401386261,
+          "tune_max_us": 147.34840393066406,
+          "status": "ok",
+          "wall_seconds": 0.5755321979522705
+        },
+        {
+          "config": {
+            "route": "all_compute",
+            "reg_m": 2,
+            "reg_n": 2,
+            "reg_k": 4,
+            "waves_m": 2,
+            "waves_n": 2,
+            "num_buffers": 3,
+            "swizzle_m": 32,
+            "direct_b_global": false,
+            "use_xcd_remap": false,
+            "main_loop_unroll": true
+          },
+          "phase": "allcompute",
+          "error": {
+            "passed": true,
+            "max_abs": 1.0,
+            "rel_l2": 5.176489686399624e-05
+          },
+          "tune_e2e_us": 147.48259782791138,
+          "tune_min_us": 147.2983956336975,
+          "tune_max_us": 148.0813980102539,
+          "status": "ok",
+          "wall_seconds": 0.5787837505340576
+        },
+        {
+          "config": {
+            "route": "all_compute",
+            "reg_m": 2,
+            "reg_n": 2,
+            "reg_k": 4,
+            "waves_m": 2,
+            "waves_n": 2,
+            "num_buffers": 4,
+            "swizzle_m": 32,
+            "direct_b_global": false,
+            "use_xcd_remap": false
+          },
+          "phase": "allcompute",
+          "error": {
+            "passed": true,
+            "max_abs": 1.0,
+            "rel_l2": 5.176489686399624e-05
+          },
+          "tune_e2e_us": 147.326397895813,
+          "tune_min_us": 137.6979947090149,
+          "tune_max_us": 148.37199449539185,
+          "status": "ok",
+          "wall_seconds": 0.6877386569976807
+        },
+        {
+          "config": {
+            "route": "all_compute",
+            "reg_m": 2,
+            "reg_n": 2,
+            "reg_k": 4,
+            "waves_m": 2,
+            "waves_n": 2,
+            "num_buffers": 4,
+            "swizzle_m": 32,
+            "direct_b_global": false,
+            "use_xcd_remap": false,
+            "main_loop_unroll": true
+          },
+          "phase": "allcompute",
+          "error": {
+            "passed": true,
+            "max_abs": 1.0,
+            "rel_l2": 5.176489686399624e-05
+          },
+          "tune_e2e_us": 147.58479595184326,
+          "tune_min_us": 145.13520002365112,
+          "tune_max_us": 148.3780026435852,
+          "status": "ok",
+          "wall_seconds": 0.6921865940093994
+        },
+        {
+          "config": {
+            "route": "all_compute",
+            "reg_m": 2,
+            "reg_n": 4,
+            "reg_k": 4,
+            "waves_m": 2,
+            "waves_n": 2,
+            "num_buffers": 2,
+            "swizzle_m": 32,
+            "direct_b_global": false,
+            "use_xcd_remap": false
+          },
+          "phase": "allcompute",
+          "error": {
+            "passed": true,
+            "max_abs": 1.0,
+            "rel_l2": 5.176489686399624e-05
+          },
+          "tune_e2e_us": 126.65339708328247,
+          "tune_min_us": 126.4672040939331,
+          "tune_max_us": 127.66300439834595,
+          "status": "ok",
+          "wall_seconds": 0.6770670413970947
+        },
+        {
+          "config": {
+            "route": "all_compute",
+            "reg_m": 2,
+            "reg_n": 4,
+            "reg_k": 4,
+            "waves_m": 2,
+            "waves_n": 2,
+            "num_buffers": 2,
+            "swizzle_m": 32,
+            "direct_b_global": false,
+            "use_xcd_remap": false,
+            "main_loop_unroll": true
+          },
+          "phase": "allcompute",
+          "error": {
+            "passed": true,
+            "max_abs": 1.0,
+            "rel_l2": 5.176489686399624e-05
+          },
+          "tune_e2e_us": 126.55520439147949,
+          "tune_min_us": 126.08859539031982,
+          "tune_max_us": 127.88920402526855,
+          "status": "ok",
+          "wall_seconds": 0.6844360828399658
+        },
+        {
+          "config": {
+            "route": "all_compute",
+            "reg_m": 2,
+            "reg_n": 4,
+            "reg_k": 4,
+            "waves_m": 2,
+            "waves_n": 2,
+            "num_buffers": 3,
+            "swizzle_m": 32,
+            "direct_b_global": false,
+            "use_xcd_remap": false
+          },
+          "phase": "allcompute",
+          "error": {
+            "passed": true,
+            "max_abs": 1.0,
+            "rel_l2": 5.176489686399624e-05
+          },
+          "tune_e2e_us": 120.8467960357666,
+          "tune_min_us": 120.728600025177,
+          "tune_max_us": 121.98259830474854,
+          "status": "ok",
+          "wall_seconds": 0.8396873474121094
+        },
+        {
+          "config": {
+            "route": "all_compute",
+            "reg_m": 2,
+            "reg_n": 4,
+            "reg_k": 4,
+            "waves_m": 2,
+            "waves_n": 2,
+            "num_buffers": 3,
+            "swizzle_m": 32,
+            "direct_b_global": false,
+            "use_xcd_remap": false,
+            "main_loop_unroll": true
+          },
+          "phase": "allcompute",
+          "error": {
+            "passed": true,
+            "max_abs": 1.0,
+            "rel_l2": 5.176489686399624e-05
+          },
+          "tune_e2e_us": 121.09119892120361,
+          "tune_min_us": 120.80680131912231,
+          "tune_max_us": 121.7542052268982,
+          "status": "ok",
+          "wall_seconds": 0.8461425304412842
+        },
+        {
+          "config": {
+            "route": "all_compute",
+            "reg_m": 2,
+            "reg_n": 4,
+            "reg_k": 4,
+            "waves_m": 2,
+            "waves_n": 2,
+            "num_buffers": 4,
+            "swizzle_m": 32,
+            "direct_b_global": false,
+            "use_xcd_remap": false
+          },
+          "phase": "allcompute",
+          "error": {
+            "passed": true,
+            "max_abs": 1.0,
+            "rel_l2": 5.176489686399624e-05
+          },
+          "tune_e2e_us": 121.6539978981018,
+          "tune_min_us": 113.46980333328247,
+          "tune_max_us": 127.17219591140747,
+          "status": "ok",
+          "wall_seconds": 1.0127484798431396
+        },
+        {
+          "config": {
+            "route": "all_compute",
+            "reg_m": 2,
+            "reg_n": 4,
+            "reg_k": 4,
+            "waves_m": 2,
+            "waves_n": 2,
+            "num_buffers": 4,
+            "swizzle_m": 32,
+            "direct_b_global": false,
+            "use_xcd_remap": false,
+            "main_loop_unroll": true
+          },
+          "phase": "allcompute",
+          "error": {
+            "passed": true,
+            "max_abs": 1.0,
+            "rel_l2": 5.176489686399624e-05
+          },
+          "tune_e2e_us": 123.6989974975586,
+          "tune_min_us": 119.93340253829956,
+          "tune_max_us": 127.16020345687866,
+          "status": "ok",
+          "wall_seconds": 1.0181961059570312
+        },
+        {
+          "config": {
+            "route": "all_compute",
+            "reg_m": 2,
+            "reg_n": 1,
+            "reg_k": 4,
+            "waves_m": 4,
+            "waves_n": 2,
+            "num_buffers": 2,
+            "swizzle_m": 32,
+            "direct_b_global": false,
+            "use_xcd_remap": false
+          },
+          "phase": "allcompute",
+          "error": {
+            "passed": true,
+            "max_abs": 1.0,
+            "rel_l2": 5.176489686399624e-05
+          },
+          "tune_e2e_us": 170.53899765014648,
+          "tune_min_us": 162.75140047073364,
+          "tune_max_us": 178.14040184020996,
+          "status": "ok",
+          "wall_seconds": 0.3825957775115967
+        },
+        {
+          "config": {
+            "route": "all_compute",
+            "reg_m": 2,
+            "reg_n": 1,
+            "reg_k": 4,
+            "waves_m": 4,
+            "waves_n": 2,
+            "num_buffers": 2,
+            "swizzle_m": 32,
+            "direct_b_global": false,
+            "use_xcd_remap": false,
+            "main_loop_unroll": true
+          },
+          "phase": "allcompute",
+          "error": {
+            "passed": true,
+            "max_abs": 1.0,
+            "rel_l2": 5.176489686399624e-05
+          },
+          "tune_e2e_us": 151.43660306930542,
+          "tune_min_us": 147.65679836273193,
+          "tune_max_us": 163.5606050491333,
+          "status": "ok",
+          "wall_seconds": 0.3834688663482666
+        },
+        {
+          "config": {
+            "route": "all_compute",
+            "reg_m": 2,
+            "reg_n": 1,
+            "reg_k": 4,
+            "waves_m": 4,
+            "waves_n": 2,
+            "num_buffers": 3,
+            "swizzle_m": 32,
+            "direct_b_global": false,
+            "use_xcd_remap": false
+          },
+          "phase": "allcompute",
+          "error": {
+            "passed": true,
+            "max_abs": 1.0,
+            "rel_l2": 5.176489686399624e-05
+          },
+          "tune_e2e_us": 174.47099685668945,
+          "tune_min_us": 171.1840033531189,
+          "tune_max_us": 176.30959749221802,
+          "status": "ok",
+          "wall_seconds": 0.47008395195007324
+        },
+        {
+          "config": {
+            "route": "all_compute",
+            "reg_m": 2,
+            "reg_n": 1,
+            "reg_k": 4,
+            "waves_m": 4,
+            "waves_n": 2,
+            "num_buffers": 3,
+            "swizzle_m": 32,
+            "direct_b_global": false,
+            "use_xcd_remap": false,
+            "main_loop_unroll": true
+          },
+          "phase": "allcompute",
+          "error": {
+            "passed": true,
+            "max_abs": 1.0,
+            "rel_l2": 5.176489686399624e-05
+          },
+          "tune_e2e_us": 168.05139780044556,
+          "tune_min_us": 155.06000518798828,
+          "tune_max_us": 176.4780044555664,
+          "status": "ok",
+          "wall_seconds": 0.4730565547943115
+        },
+        {
+          "config": {
+            "route": "all_compute",
+            "reg_m": 2,
+            "reg_n": 1,
+            "reg_k": 4,
+            "waves_m": 4,
+            "waves_n": 2,
+            "num_buffers": 4,
+            "swizzle_m": 32,
+            "direct_b_global": false,
+            "use_xcd_remap": false
+          },
+          "phase": "allcompute",
+          "error": {
+            "passed": true,
+            "max_abs": 1.0,
+            "rel_l2": 5.176489686399624e-05
+          },
+          "tune_e2e_us": 195.97519636154175,
+          "tune_min_us": 195.4983949661255,
+          "tune_max_us": 196.2556004524231,
+          "status": "ok",
+          "wall_seconds": 0.5606262683868408
+        },
+        {
+          "config": {
+            "route": "all_compute",
+            "reg_m": 2,
+            "reg_n": 1,
+            "reg_k": 4,
+            "waves_m": 4,
+            "waves_n": 2,
+            "num_buffers": 4,
+            "swizzle_m": 32,
+            "direct_b_global": false,
+            "use_xcd_remap": false,
+            "main_loop_unroll": true
+          },
+          "phase": "allcompute",
+          "error": {
+            "passed": true,
+            "max_abs": 1.0,
+            "rel_l2": 5.176489686399624e-05
+          },
+          "tune_e2e_us": 196.1833953857422,
+          "tune_min_us": 195.94919681549072,
+          "tune_max_us": 196.6521978378296,
+          "status": "ok",
+          "wall_seconds": 0.5629062652587891
+        },
+        {
+          "config": {
+            "route": "all_compute",
+            "reg_m": 2,
+            "reg_n": 2,
+            "reg_k": 4,
+            "waves_m": 4,
+            "waves_n": 2,
+            "num_buffers": 2,
+            "swizzle_m": 32,
+            "direct_b_global": false,
+            "use_xcd_remap": false
+          },
+          "phase": "allcompute",
+          "error": {
+            "passed": true,
+            "max_abs": 1.0,
+            "rel_l2": 5.176489686399624e-05
+          },
+          "tune_e2e_us": 127.68900394439697,
+          "tune_min_us": 127.48080492019653,
+          "tune_max_us": 128.28400135040283,
+          "status": "ok",
+          "wall_seconds": 0.46639513969421387
+        },
+        {
+          "config": {
+            "route": "all_compute",
+            "reg_m": 2,
+            "reg_n": 2,
+            "reg_k": 4,
+            "waves_m": 4,
+            "waves_n": 2,
+            "num_buffers": 2,
+            "swizzle_m": 32,
+            "direct_b_global": false,
+            "use_xcd_remap": false,
+            "main_loop_unroll": true
+          },
+          "phase": "allcompute",
+          "error": {
+            "passed": true,
+            "max_abs": 1.0,
+            "rel_l2": 5.176489686399624e-05
+          },
+          "tune_e2e_us": 128.11579704284668,
+          "tune_min_us": 127.49279737472534,
+          "tune_max_us": 129.0750026702881,
+          "status": "ok",
+          "wall_seconds": 0.4671151638031006
+        },
+        {
+          "config": {
+            "route": "all_compute",
+            "reg_m": 2,
+            "reg_n": 2,
+            "reg_k": 4,
+            "waves_m": 4,
+            "waves_n": 2,
+            "num_buffers": 3,
+            "swizzle_m": 32,
+            "direct_b_global": false,
+            "use_xcd_remap": false
+          },
+          "phase": "allcompute",
+          "error": {
+            "passed": true,
+            "max_abs": 1.0,
+            "rel_l2": 5.176489686399624e-05
+          },
+          "tune_e2e_us": 121.14720344543457,
+          "tune_min_us": 120.52240371704102,
+          "tune_max_us": 122.0005989074707,
+          "status": "ok",
+          "wall_seconds": 0.5768816471099854
+        },
+        {
+          "config": {
+            "route": "all_compute",
+            "reg_m": 2,
+            "reg_n": 2,
+            "reg_k": 4,
+            "waves_m": 4,
+            "waves_n": 2,
+            "num_buffers": 3,
+            "swizzle_m": 32,
+            "direct_b_global": false,
+            "use_xcd_remap": false,
+            "main_loop_unroll": true
+          },
+          "phase": "allcompute",
+          "error": {
+            "passed": true,
+            "max_abs": 1.0,
+            "rel_l2": 5.176489686399624e-05
+          },
+          "tune_e2e_us": 121.00299596786499,
+          "tune_min_us": 120.8888053894043,
+          "tune_max_us": 121.83640003204346,
+          "status": "ok",
+          "wall_seconds": 0.5795762538909912
+        },
+        {
+          "config": {
+            "route": "all_compute",
+            "reg_m": 2,
+            "reg_n": 2,
+            "reg_k": 4,
+            "waves_m": 4,
+            "waves_n": 2,
+            "num_buffers": 4,
+            "swizzle_m": 32,
+            "direct_b_global": false,
+            "use_xcd_remap": false
+          },
+          "phase": "allcompute",
+          "error": {
+            "passed": true,
+            "max_abs": 1.0,
+            "rel_l2": 5.176489686399624e-05
+          },
+          "tune_e2e_us": 123.28039407730103,
+          "tune_min_us": 123.12819957733154,
+          "tune_max_us": 127.55279541015625,
+          "status": "ok",
+          "wall_seconds": 0.6883211135864258
+        },
+        {
+          "config": {
+            "route": "all_compute",
+            "reg_m": 2,
+            "reg_n": 2,
+            "reg_k": 4,
+            "waves_m": 4,
+            "waves_n": 2,
+            "num_buffers": 4,
+            "swizzle_m": 32,
+            "direct_b_global": false,
+            "use_xcd_remap": false,
+            "main_loop_unroll": true
+          },
+          "phase": "allcompute",
+          "error": {
+            "passed": true,
+            "max_abs": 1.0,
+            "rel_l2": 5.176489686399624e-05
+          },
+          "tune_e2e_us": 124.3459939956665,
+          "tune_min_us": 123.4186053276062,
+          "tune_max_us": 124.70660209655762,
+          "status": "ok",
+          "wall_seconds": 0.6917915344238281
+        },
+        {
+          "config": {
+            "route": "all_compute",
+            "reg_m": 2,
+            "reg_n": 4,
+            "reg_k": 4,
+            "waves_m": 4,
+            "waves_n": 2,
+            "num_buffers": 2,
+            "swizzle_m": 32,
+            "direct_b_global": false,
+            "use_xcd_remap": false
+          },
+          "phase": "allcompute",
+          "error": {
+            "passed": true,
+            "max_abs": 1.0,
+            "rel_l2": 5.176489686399624e-05
+          },
+          "tune_e2e_us": 96.10779881477356,
+          "tune_min_us": 95.83140015602112,
+          "tune_max_us": 96.6405987739563,
+          "status": "ok",
+          "wall_seconds": 0.6749639511108398
+        },
+        {
+          "config": {
+            "route": "all_compute",
+            "reg_m": 2,
+            "reg_n": 4,
+            "reg_k": 4,
+            "waves_m": 4,
+            "waves_n": 2,
+            "num_buffers": 2,
+            "swizzle_m": 32,
+            "direct_b_global": false,
+            "use_xcd_remap": false,
+            "main_loop_unroll": true
+          },
+          "phase": "allcompute",
+          "error": {
+            "passed": true,
+            "max_abs": 1.0,
+            "rel_l2": 5.176489686399624e-05
+          },
+          "tune_e2e_us": 95.82139849662781,
+          "tune_min_us": 95.65920233726501,
+          "tune_max_us": 96.70479893684387,
+          "status": "ok",
+          "wall_seconds": 0.684518575668335
+        },
+        {
+          "config": {
+            "route": "all_compute",
+            "reg_m": 2,
+            "reg_n": 4,
+            "reg_k": 4,
+            "waves_m": 4,
+            "waves_n": 2,
+            "num_buffers": 3,
+            "swizzle_m": 32,
+            "direct_b_global": false,
+            "use_xcd_remap": false
+          },
+          "phase": "allcompute",
+          "error": {
+            "passed": true,
+            "max_abs": 1.0,
+            "rel_l2": 5.176489686399624e-05
+          },
+          "tune_e2e_us": 99.931401014328,
+          "tune_min_us": 99.06420111656189,
+          "tune_max_us": 100.61060190200806,
+          "status": "ok",
+          "wall_seconds": 0.8382344245910645
+        },
+        {
+          "config": {
+            "route": "all_compute",
+            "reg_m": 2,
+            "reg_n": 4,
+            "reg_k": 4,
+            "waves_m": 4,
+            "waves_n": 2,
+            "num_buffers": 3,
+            "swizzle_m": 32,
+            "direct_b_global": false,
+            "use_xcd_remap": false,
+            "main_loop_unroll": true
+          },
+          "phase": "allcompute",
+          "error": {
+            "passed": true,
+            "max_abs": 1.0,
+            "rel_l2": 5.176489686399624e-05
+          },
+          "tune_e2e_us": 99.51279759407043,
+          "tune_min_us": 98.68959784507751,
+          "tune_max_us": 100.30399560928345,
+          "status": "ok",
+          "wall_seconds": 0.8458998203277588
+        },
+        {
+          "config": {
+            "route": "all_compute",
+            "reg_m": 2,
+            "reg_n": 4,
+            "reg_k": 4,
+            "waves_m": 4,
+            "waves_n": 2,
+            "num_buffers": 4,
+            "swizzle_m": 32,
+            "direct_b_global": false,
+            "use_xcd_remap": false
+          },
+          "phase": "allcompute",
+          "error": {
+            "passed": true,
+            "max_abs": 1.0,
+            "rel_l2": 5.176489686399624e-05
+          },
+          "tune_e2e_us": 99.32460188865662,
+          "tune_min_us": 98.87199997901917,
+          "tune_max_us": 100.29000043869019,
+          "status": "ok",
+          "wall_seconds": 1.0086100101470947
+        },
+        {
+          "config": {
+            "route": "all_compute",
+            "reg_m": 2,
+            "reg_n": 4,
+            "reg_k": 4,
+            "waves_m": 4,
+            "waves_n": 2,
+            "num_buffers": 4,
+            "swizzle_m": 32,
+            "direct_b_global": false,
+            "use_xcd_remap": false,
+            "main_loop_unroll": true
+          },
+          "phase": "allcompute",
+          "error": {
+            "passed": true,
+            "max_abs": 1.0,
+            "rel_l2": 5.176489686399624e-05
+          },
+          "tune_e2e_us": 98.9080011844635,
+          "tune_min_us": 98.62359762191772,
+          "tune_max_us": 100.30399560928345,
+          "status": "ok",
+          "wall_seconds": 1.0183970928192139
+        },
+        {
+          "config": {
+            "route": "all_compute",
+            "reg_m": 2,
+            "reg_n": 4,
+            "reg_k": 2,
+            "waves_m": 4,
+            "waves_n": 2,
+            "num_buffers": 2,
+            "swizzle_m": 32,
+            "direct_b_global": false,
+            "use_xcd_remap": false
+          },
+          "phase": "allcompute",
+          "error": {
+            "passed": true,
+            "max_abs": 1.0,
+            "rel_l2": 5.176489686399624e-05
+          },
+          "tune_e2e_us": 103.98759841918945,
+          "tune_min_us": 102.35719680786133,
+          "tune_max_us": 105.16140460968018,
+          "status": "ok",
+          "wall_seconds": 0.5133874416351318
+        },
+        {
+          "config": {
+            "route": "all_compute",
+            "reg_m": 2,
+            "reg_n": 4,
+            "reg_k": 2,
+            "waves_m": 4,
+            "waves_n": 2,
+            "num_buffers": 2,
+            "swizzle_m": 32,
+            "direct_b_global": false,
+            "use_xcd_remap": false,
+            "main_loop_unroll": true
+          },
+          "phase": "allcompute",
+          "error": {
+            "passed": true,
+            "max_abs": 1.0,
+            "rel_l2": 5.176489686399624e-05
+          },
+          "tune_e2e_us": 102.7817964553833,
+          "tune_min_us": 101.16540193557739,
+          "tune_max_us": 105.6439995765686,
+          "status": "ok",
+          "wall_seconds": 0.5138287544250488
+        },
+        {
+          "config": {
+            "route": "all_compute",
+            "reg_m": 2,
+            "reg_n": 4,
+            "reg_k": 2,
+            "waves_m": 4,
+            "waves_n": 2,
+            "num_buffers": 3,
+            "swizzle_m": 32,
+            "direct_b_global": false,
+            "use_xcd_remap": false
+          },
+          "phase": "allcompute",
+          "error": {
+            "passed": true,
+            "max_abs": 1.0,
+            "rel_l2": 5.176489686399624e-05
+          },
+          "tune_e2e_us": 98.71580004692078,
+          "tune_min_us": 98.27499985694885,
+          "tune_max_us": 100.06979703903198,
+          "status": "ok",
+          "wall_seconds": 0.5990111827850342
+        },
+        {
+          "config": {
+            "route": "all_compute",
+            "reg_m": 2,
+            "reg_n": 4,
+            "reg_k": 2,
+            "waves_m": 4,
+            "waves_n": 2,
+            "num_buffers": 3,
+            "swizzle_m": 32,
+            "direct_b_global": false,
+            "use_xcd_remap": false,
+            "main_loop_unroll": true
+          },
+          "phase": "allcompute",
+          "error": {
+            "passed": true,
+            "max_abs": 1.0,
+            "rel_l2": 5.176489686399624e-05
+          },
+          "tune_e2e_us": 98.02259802818298,
+          "tune_min_us": 96.96900248527527,
+          "tune_max_us": 99.5527982711792,
+          "status": "ok",
+          "wall_seconds": 0.6018218994140625
+        },
+        {
+          "config": {
+            "route": "all_compute",
+            "reg_m": 2,
+            "reg_n": 4,
+            "reg_k": 2,
+            "waves_m": 4,
+            "waves_n": 2,
+            "num_buffers": 4,
+            "swizzle_m": 32,
+            "direct_b_global": false,
+            "use_xcd_remap": false
+          },
+          "phase": "allcompute",
+          "error": {
+            "passed": true,
+            "max_abs": 1.0,
+            "rel_l2": 5.176489686399624e-05
+          },
+          "tune_e2e_us": 99.32259917259216,
+          "tune_min_us": 97.91240096092224,
+          "tune_max_us": 100.02959966659546,
+          "status": "ok",
+          "wall_seconds": 0.6888742446899414
+        },
+        {
+          "config": {
+            "route": "all_compute",
+            "reg_m": 2,
+            "reg_n": 4,
+            "reg_k": 2,
+            "waves_m": 4,
+            "waves_n": 2,
+            "num_buffers": 4,
+            "swizzle_m": 32,
+            "direct_b_global": false,
+            "use_xcd_remap": false,
+            "main_loop_unroll": true
+          },
+          "phase": "allcompute",
+          "error": {
+            "passed": true,
+            "max_abs": 1.0,
+            "rel_l2": 5.176489686399624e-05
+          },
+          "tune_e2e_us": 98.22480082511902,
+          "tune_min_us": 97.54379987716675,
+          "tune_max_us": 98.94199967384338,
+          "status": "ok",
+          "wall_seconds": 0.6885485649108887
+        },
+        {
+          "config": {
+            "route": "all_compute",
+            "reg_m": 8,
+            "reg_n": 4,
+            "reg_k": 2,
+            "waves_m": 1,
+            "waves_n": 4,
+            "num_buffers": 2,
+            "swizzle_m": 8,
+            "direct_b_global": true,
+            "use_xcd_remap": true
+          },
+          "phase": "allcompute",
+          "error": {
+            "passed": true,
+            "max_abs": 1.0,
+            "rel_l2": 5.176489686399624e-05
+          },
+          "tune_e2e_us": 92.4381971359253,
+          "tune_min_us": 84.20000076293945,
+          "tune_max_us": 94.49139833450317,
+          "status": "ok",
+          "wall_seconds": 2.253817319869995
+        },
+        {
+          "config": {
+            "route": "all_compute",
+            "reg_m": 8,
+            "reg_n": 4,
+            "reg_k": 2,
+            "waves_m": 1,
+            "waves_n": 4,
+            "num_buffers": 2,
+            "swizzle_m": 16,
+            "direct_b_global": true,
+            "use_xcd_remap": true
+          },
+          "phase": "allcompute",
+          "error": {
+            "passed": true,
+            "max_abs": 1.0,
+            "rel_l2": 5.176489686399624e-05
+          },
+          "tune_e2e_us": 92.81079769134521,
+          "tune_min_us": 84.15380120277405,
+          "tune_max_us": 93.00519824028015,
+          "status": "ok",
+          "wall_seconds": 2.270904541015625
+        },
+        {
+          "config": {
+            "route": "all_compute",
+            "reg_m": 8,
+            "reg_n": 4,
+            "reg_k": 2,
+            "waves_m": 1,
+            "waves_n": 4,
+            "num_buffers": 2,
+            "swizzle_m": 32,
+            "direct_b_global": true,
+            "use_xcd_remap": true
+          },
+          "phase": "allcompute",
+          "error": {
+            "passed": true,
+            "max_abs": 1.0,
+            "rel_l2": 5.176489686399624e-05
+          },
+          "tune_e2e_us": 84.8147988319397,
+          "tune_min_us": 83.52500200271606,
+          "tune_max_us": 93.53780150413513,
+          "status": "ok",
+          "wall_seconds": 2.2753803730010986
+        },
+        {
+          "config": {
+            "route": "all_compute",
+            "reg_m": 8,
+            "reg_n": 4,
+            "reg_k": 2,
+            "waves_m": 1,
+            "waves_n": 4,
+            "num_buffers": 3,
+            "swizzle_m": 8,
+            "direct_b_global": true,
+            "use_xcd_remap": true
+          },
+          "phase": "allcompute",
+          "error": {
+            "passed": true,
+            "max_abs": 1.0,
+            "rel_l2": 5.176489686399624e-05
+          },
+          "tune_e2e_us": 88.71259689331055,
+          "tune_min_us": 87.72119879722595,
+          "tune_max_us": 89.45580124855042,
+          "status": "ok",
+          "wall_seconds": 0.0034034252166748047
+        },
+        {
+          "config": {
+            "route": "all_compute",
+            "reg_m": 8,
+            "reg_n": 4,
+            "reg_k": 2,
+            "waves_m": 1,
+            "waves_n": 4,
+            "num_buffers": 3,
+            "swizzle_m": 16,
+            "direct_b_global": true,
+            "use_xcd_remap": true
+          },
+          "phase": "allcompute",
+          "error": {
+            "passed": true,
+            "max_abs": 1.0,
+            "rel_l2": 5.176489686399624e-05
+          },
+          "tune_e2e_us": 89.1111969947815,
+          "tune_min_us": 88.80500197410583,
+          "tune_max_us": 89.47780132293701,
+          "status": "ok",
+          "wall_seconds": 2.4984219074249268
+        },
+        {
+          "config": {
+            "route": "all_compute",
+            "reg_m": 8,
+            "reg_n": 4,
+            "reg_k": 2,
+            "waves_m": 1,
+            "waves_n": 4,
+            "num_buffers": 3,
+            "swizzle_m": 32,
+            "direct_b_global": true,
+            "use_xcd_remap": true
+          },
+          "phase": "allcompute",
+          "error": {
+            "passed": true,
+            "max_abs": 1.0,
+            "rel_l2": 5.176489686399624e-05
+          },
+          "tune_e2e_us": 89.32960033416748,
+          "tune_min_us": 80.27399778366089,
+          "tune_max_us": 100.422203540802,
+          "status": "ok",
+          "wall_seconds": 2.498014450073242
+        }
+      ]
+    }
+  ]
+}
